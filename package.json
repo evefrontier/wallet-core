@@ -30,8 +30,8 @@
     "src/definitions"
   ],
   "devDependencies": {
-    "@types/node": "^25.6.0",
     "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5",
     "oxlint": "^1.61.0",
     "oxlint-tsgolint": "^0.21.1",
     "prettier": "^3.8.3",
@@ -47,7 +47,8 @@
     "oxlint:fix": "oxlint --fix",
     "lint": "pnpm run oxlint:check && pnpm run prettier:check",
     "lint:fix": "pnpm run oxlint:fix && pnpm run prettier:fix",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage"
   },
   "repository": {
     "type": "git",
