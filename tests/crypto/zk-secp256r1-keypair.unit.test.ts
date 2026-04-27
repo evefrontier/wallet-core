@@ -5,6 +5,8 @@ import { parseSerializedSignature, type IntentScope } from '@mysten/sui/cryptogr
 import { zkpdBase } from '#tests/crypto/zk-common.unit.test'
 import { fromBase64, toBase64 } from '@mysten/sui/utils'
 import { parseZkLoginSignature } from '@mysten/sui/zklogin'
+import { Uint8ArrayFromHex } from '#tests/utils'
+
 
 describe('zk-secp256r1-keypair (a Keypair/Signer that can ZK sign)', () => {
   it('should be constructable', async () => {
@@ -24,10 +26,10 @@ describe('zk-secp256r1-keypair (a Keypair/Signer that can ZK sign)', () => {
     const seed =
       '0x0102030405060708091011121314151617181920212223242526272829303132'
     const sut1 = ZKSecp256r1Keypair.fromSeed(
-      new Uint8Array(Buffer.from(seed.slice(2), 'hex'))
+      new Uint8Array(Uint8ArrayFromHex(seed.slice(2)))
     )
     const sut2 = ZKSecp256r1Keypair.fromSeed(
-      new Uint8Array(Buffer.from(seed.slice(2), 'hex'))
+      new Uint8Array(Uint8ArrayFromHex(seed.slice(2)))
     )
     expect(sut1.getSecretKey()).toBe(sut2.getSecretKey())
     expect(sut1.getPublicKey().toRawBytes()).toEqual(
@@ -39,7 +41,7 @@ describe('zk-secp256r1-keypair (a Keypair/Signer that can ZK sign)', () => {
     const seed =
       '0x0102030405060708091011121314151617181920212223242526272829303132'
     const ref = ZKSecp256r1Keypair.fromSeed(
-      new Uint8Array(Buffer.from(seed.slice(2), 'hex'))
+      new Uint8Array(Uint8ArrayFromHex(seed.slice(2)))
     )
     const intent = 'TransactionData' as IntentScope
     const { signature } = await ref.signWithIntent(

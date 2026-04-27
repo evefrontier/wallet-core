@@ -5,6 +5,8 @@ import { parseSerializedSignature, type IntentScope } from '@mysten/sui/cryptogr
 import { zkpdBase } from '#tests/crypto/zk-common.unit.test'
 import { fromBase64, toBase64 } from '@mysten/sui/utils'
 import { parseZkLoginSignature } from '@mysten/sui/zklogin'
+import { Uint8ArrayFromBase64 } from '#tests/utils'
+
 
 describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
   it('should be constructable', async () => {
@@ -61,9 +63,8 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     const seed = '0x123456789012345678901'
     const ref = ZKEd25519Keypair.deriveKeypairFromSeed(seed)
     ref.applyZKProof(zkpdBase)
-    const bytes = Buffer.from(
-      'AAACACB6nRnUwhBmOSbrVJ2lmlTiV3f+9jFhv8zaCCd7WLQhLgAIAQAAAAAAAAACAgABAQEAAQEDAAAAAAEAAIkm4xFlv/IfCwFL2q8gQl48ASW+dZshGS6KlQjPcXnzAaQHRhEcp3nw0f9HRL6o78c1/DEHTE7W0Ou+c0HJrMnzshXQFAAAAAAgauRZWN2P4by/234vMwvTe0w9W3GOeMQ84iJGT4Y7Gs+JJuMRZb/yHwsBS9qvIEJePAElvnWbIRkuipUIz3F58+gDAAAAAAAAgENbCQAAAAAA',
-      'base64'
+    const bytes = Uint8ArrayFromBase64(
+      'AAACACB6nRnUwhBmOSbrVJ2lmlTiV3f+9jFhv8zaCCd7WLQhLgAIAQAAAAAAAAACAgABAQEAAQEDAAAAAAEAAIkm4xFlv/IfCwFL2q8gQl48ASW+dZshGS6KlQjPcXnzAaQHRhEcp3nw0f9HRL6o78c1/DEHTE7W0Ou+c0HJrMnzshXQFAAAAAAgauRZWN2P4by/234vMwvTe0w9W3GOeMQ84iJGT4Y7Gs+JJuMRZb/yHwsBS9qvIEJePAElvnWbIRkuipUIz3F58+gDAAAAAAAAgENbCQAAAAAA'
     )
     const intent = 'TransactionData' as IntentScope
     const { signature } = await ref.signWithIntent(bytes, intent)

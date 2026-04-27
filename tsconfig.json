@@ -1,34 +1,49 @@
 {
-	"include": ["src"],
+	"include": ["src/**/*", "tests/**/*"],
 	"compilerOptions": {
-		"noEmit": true,
-		"composite": true,
 		"target": "ES2020",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"lib": ["dom", "esnext"],
+		"useDefineForClassFields": true,
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"skipLibCheck": true,
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		// "noEmit": true,
+		// "composite": true,
+		// "target": "ES2020",
+		// "module": "NodeNext",
+		// "moduleResolution": "NodeNext",
+		// "lib": ["dom", "esnext"],
 		// output .d.ts declaration files for consumers
 		"declaration": true,
 		"declarationMap": true,
 		// output .js.map sourcemap files for consumers
 		"sourceMap": true,
 		// stricter type-checking for stronger correctness. Recommended by TS
-		"strict": true,
+		// "strict": true,
 		// linter checks for common issues
 		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
+		// "noFallthroughCasesInSwitch": true,
 		// noUnused* overlap with @typescript-/no-unused-vars, can disable if duplicative
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
+		// "noUnusedLocals": true,
+		// "noUnusedParameters": true,
 		// transpile JSX to React.createElement
-		"jsx": "react-jsx",
+		// "jsx": "react-jsx",
 		// interop between ESM and CJS modules. Recommended by TS
 		"esModuleInterop": true,
 		// significant perf increase by skipping checking .d.ts files, particularly those in node_modules. Recommended by TS
-		"skipLibCheck": true,
+		// "skipLibCheck": true,
 		// error out if import and file system have a casing mismatch. Recommended by TS
 		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true,
+		// "resolveJsonModule": true,
 		"paths": {
 			"#src/*": ["./src/*"],
 			"#tests/*": ["./tests/*"]

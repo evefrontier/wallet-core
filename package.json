@@ -6,21 +6,9 @@
     "license": "MIT",
     "type": "module",
     "exports": {
-        "./crypto": {
-            "types": "./dist/crypto/index.d.ts",
-            "import": "./dist/crypto/index.js",
-            "default": "./dist/crypto/index.js"
-        },
-        "./wallet-standard": {
-            "types": "./dist/wallet-standard/index.d.ts",
-            "import": "./dist/wallet-standard/index.js",
-            "default": "./dist/wallet-standard/index.js"
-        },
-        "./definitions": {
-            "types": "./dist/definitions/index.d.ts",
-            "import": "./dist/definitions/index.js",
-            "default": "./dist/definitions/index.js"
-        }
+        "./crypto": "./crypto/index.ts",
+        "./wallet-standard": "./wallet-standard/index.ts",
+        "./definitions": "./definitions/index.ts"
     },
     "imports": {
         "#src/*": [
@@ -47,13 +35,12 @@
         "oxlint": "^1.61.0",
         "oxlint-tsgolint": "^0.21.1",
         "prettier": "^3.8.3",
-        "tsdown": "^0.21.9",
         "typescript": "^6.0.3",
         "vitest": "^4.1.5"
     },
     "scripts": {
         "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
-        "build": "rm -rf dist && tsc --noEmit && tsdown",
+        "build": "rm -rf dist && tsc --noEmit",
         "prettier:check": "prettier -c --ignore-unknown .",
         "prettier:fix": "prettier -w --ignore-unknown .",
         "oxlint:check": "oxlint  .",
