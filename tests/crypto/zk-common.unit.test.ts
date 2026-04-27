@@ -85,29 +85,25 @@ describe('ZKProofHandler', () => {
     it('should throw if maxEpoch is not a number greater than 0', () => {
       const sut = new ZKProofHandler()
       expect(() => sut.applyZKProof({ ...zkpdBase, maxEpoch: -1 })).toThrow(
-        'applyZKProof expected property "$maxEpoch" to be a number greater than 0'
+        'applyZKProof expected property "$maxEpoch" to be a number greater than 0',
       )
     })
     it('should throw if userSalt is not a string with content', () => {
       const sut = new ZKProofHandler()
       expect(() => sut.applyZKProof({ ...zkpdBase, userSalt: '' })).toThrow(
-        'applyZKProof expected property "userSalt" to be a string with content'
+        'applyZKProof expected property "userSalt" to be a string with content',
       )
     })
     it('should throw if tokenClaimSub is not a string with content', () => {
       const sut = new ZKProofHandler()
-      expect(() =>
-        sut.applyZKProof({ ...zkpdBase, tokenClaimSub: '' })
-      ).toThrow(
-        'applyZKProof expected property "tokenClaimSub" to be a string with content'
+      expect(() => sut.applyZKProof({ ...zkpdBase, tokenClaimSub: '' })).toThrow(
+        'applyZKProof expected property "tokenClaimSub" to be a string with content',
       )
     })
     it('should throw if tokenClaimAud is not a string with content', () => {
       const sut = new ZKProofHandler()
-      expect(() =>
-        sut.applyZKProof({ ...zkpdBase, tokenClaimAud: '' })
-      ).toThrow(
-        'applyZKProof expected property "tokenClaimAud" to be a string with content'
+      expect(() => sut.applyZKProof({ ...zkpdBase, tokenClaimAud: '' })).toThrow(
+        'applyZKProof expected property "tokenClaimAud" to be a string with content',
       )
     })
     it('should throw if partialZkLoginSignature is not in the correct format', () => {
@@ -116,10 +112,8 @@ describe('ZKProofHandler', () => {
         sut.applyZKProof({
           ...zkpdBase,
           partialZkLoginSignature: {} as PartialZkLoginSignature,
-        })
-      ).toThrow(
-        'applyZKProof expected property "partialZkLoginSignature" in incorrect'
-      )
+        }),
+      ).toThrow('applyZKProof expected property "partialZkLoginSignature" in incorrect')
     })
     it('should not throw if skipValidation is true, even if the input is incorrect', () => {
       const sut = new ZKProofHandler()
@@ -149,8 +143,8 @@ describe('ZKProofHandler', () => {
               headerBase64: '',
             } as PartialZkLoginSignature,
           },
-          { skipValidation: true }
-        )
+          { skipValidation: true },
+        ),
       ).not.toThrow()
       expect(sut['partialZkLoginSignature']).not.toHaveProperty('addressSeed')
       expect(sut['maxEpoch']).toBe(-1)

@@ -1,16 +1,16 @@
 {
-	"printWidth": 100,
-	"semi": true,
-	"singleQuote": true,
-	"tabWidth": 2,
-	"trailingComma": "all",
-	"useTabs": true,
-	"overrides": [
-		{
-			"files": ["*.ts"],
-			"options": {
-				"proseWrap": "always"
-			}
-		}
-	]
+  "printWidth": 100,
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "options": {
+        "proseWrap": "always"
+      }
+    }
+  ]
 }

@@ -15,9 +15,7 @@ export type PartialZkLoginSignature = Omit<
  * @returns true if `obj` includes properties with the same types found in
  * a PartialZkLoginSignature
  */
-export function isPartialZKLoginSignature(
-  obj: unknown
-): obj is PartialZkLoginSignature {
+export function isPartialZKLoginSignature(obj: unknown): obj is PartialZkLoginSignature {
   return (
     typeof obj === 'object' &&
     obj != null &&
@@ -93,10 +91,7 @@ export class ZKProofHandler implements ZKProofData {
    * @param zkpd {ZKProofData}
    * @param options optional object that can have `skipValidation` set in order to skip validation.
    */
-  applyZKProof(
-    zkpd: ZKProofData,
-    options?: { skipValidation?: boolean }
-  ): void {
+  applyZKProof(zkpd: ZKProofData, options?: { skipValidation?: boolean }): void {
     const skipValidation = options?.skipValidation ?? false
     if (!skipValidation) {
       const isStringWithContent = (data: unknown): boolean => {
@@ -104,23 +99,17 @@ export class ZKProofHandler implements ZKProofData {
       }
       const throwIfNotStringOrEmpty = (data: unknown, name: string) => {
         if (!isStringWithContent(data)) {
-          throw new Error(
-            `applyZKProof expected property "${name}" to be a string with content`
-          )
+          throw new Error(`applyZKProof expected property "${name}" to be a string with content`)
         }
       }
       const isNumberGreaterThan = (data: unknown, value: number): boolean => {
         return typeof data === 'number' && data > value
       }
       if (!isNumberGreaterThan(zkpd.maxEpoch, 0)) {
-        throw new Error(
-          `applyZKProof expected property "$maxEpoch" to be a number greater than 0`
-        )
+        throw new Error(`applyZKProof expected property "$maxEpoch" to be a number greater than 0`)
       }
       if (!isPartialZKLoginSignature(zkpd.partialZkLoginSignature)) {
-        throw new Error(
-          `applyZKProof expected property "partialZkLoginSignature" in incorrect`
-        )
+        throw new Error(`applyZKProof expected property "partialZkLoginSignature" in incorrect`)
       }
       throwIfNotStringOrEmpty(zkpd.userSalt, 'userSalt')
       throwIfNotStringOrEmpty(zkpd.tokenClaimSub, 'tokenClaimSub')
@@ -144,7 +133,7 @@ export class ZKProofHandler implements ZKProofData {
       BigInt(this.userSalt as string),
       'sub',
       this.tokenClaimSub as string,
-      this.tokenClaimAud as string
+      this.tokenClaimAud as string,
     ).toString()
   }
 

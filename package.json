@@ -1,76 +1,76 @@
 {
-    "name": "@evefrontier/signer-core",
-    "version": "0.0.1",
-    "descrtiption": "",
-    "author": "",
-    "license": "MIT",
-    "type": "module",
-    "exports": {
-        "./crypto": "./crypto/index.ts",
-        "./wallet-standard": "./wallet-standard/index.ts",
-        "./definitions": "./definitions/index.ts"
-    },
-    "imports": {
-        "#src/*": [
-            "./src/*",
-            "./src/*.ts",
-            "./src/*/index.ts"
-        ],
-        "#tests/*": [
-            "./tests/*",
-            "./tests/*.ts",
-            "./tests/*/index.ts"
-        ]
-    },
-    "files": [
-        "LICENSE",
-        "README.md",
-        "src/crypto",
-        "src/wallet-standard",
-        "src/definitions"
+  "name": "@evefrontier/signer-core",
+  "version": "0.0.1",
+  "descrtiption": "",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./crypto": "./crypto/index.ts",
+    "./wallet-standard": "./wallet-standard/index.ts",
+    "./definitions": "./definitions/index.ts"
+  },
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*/index.ts"
     ],
-    "devDependencies": {
-        "@types/node": "^25.6.0",
-        "@vitest/browser-playwright": "^4.1.5",
-        "oxlint": "^1.61.0",
-        "oxlint-tsgolint": "^0.21.1",
-        "prettier": "^3.8.3",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.5"
-    },
-    "scripts": {
-        "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
-        "build": "rm -rf dist && tsc --noEmit",
-        "prettier:check": "prettier -c --ignore-unknown .",
-        "prettier:fix": "prettier -w --ignore-unknown .",
-        "oxlint:check": "oxlint  .",
-        "oxlint:fix": "oxlint --fix",
-        "lint": "pnpm run oxlint:check && pnpm run prettier:check",
-        "lint:fix": "pnpm run oxlint:fix && pnpm run prettier:fix",
-        "test": "vitest run"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/evefrontier/signer-core.git"
-    },
-    "bugs": {
-        "url": "https://github.com/evefrontier/signer-core/issues"
-    },
-    "homepage": "https://github.com/evefrontier/signer-core/tree/main#readme",
-    "packageManager": "pnpm@10.33.0",
-    "pnpm": {
-        "overrides": {
-            "axios": "^1.15.0",
-            "lodash": ">=4.18.0",
-            "protobufjs": ">=7.5.5"
-        }
-    },
-    "engines": {
-        "node": ">=22"
-    },
-    "dependencies": {
-        "@mysten/signers": "^1.0.2",
-        "@mysten/sui": "^2.16.0",
-        "@mysten/wallet-standard": "^0.20.1"
+    "#tests/*": [
+      "./tests/*",
+      "./tests/*.ts",
+      "./tests/*/index.ts"
+    ]
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "src/crypto",
+    "src/wallet-standard",
+    "src/definitions"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@vitest/browser-playwright": "^4.1.5",
+    "oxlint": "^1.61.0",
+    "oxlint-tsgolint": "^0.21.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  },
+  "scripts": {
+    "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "rm -rf dist && tsc --noEmit",
+    "prettier:check": "prettier -c --ignore-unknown .",
+    "prettier:fix": "prettier -w --ignore-unknown .",
+    "oxlint:check": "oxlint  .",
+    "oxlint:fix": "oxlint --fix",
+    "lint": "pnpm run oxlint:check && pnpm run prettier:check",
+    "lint:fix": "pnpm run oxlint:fix && pnpm run prettier:fix",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evefrontier/signer-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/evefrontier/signer-core/issues"
+  },
+  "homepage": "https://github.com/evefrontier/signer-core/tree/main#readme",
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "axios": "^1.15.0",
+      "lodash": ">=4.18.0",
+      "protobufjs": ">=7.5.5"
     }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@mysten/signers": "^1.0.2",
+    "@mysten/sui": "^2.16.0",
+    "@mysten/wallet-standard": "^0.20.1"
+  }
 }

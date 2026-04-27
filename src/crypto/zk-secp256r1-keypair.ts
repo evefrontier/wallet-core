@@ -1,7 +1,4 @@
-import {
-  Secp256r1Keypair,
-  type Secp256r1KeypairData,
-} from '@mysten/sui/keypairs/secp256r1'
+import { Secp256r1Keypair, type Secp256r1KeypairData } from '@mysten/sui/keypairs/secp256r1'
 import { ZKProofHandler, type ZKProofData } from './zk-common.js'
 import {
   decodeSuiPrivateKey,
@@ -24,10 +21,7 @@ export class ZKSecp256r1Keypair extends Secp256r1Keypair {
    * @param zkpd {ZKProofData}
    * @param options optional object that can have `skipValidation` set in order to skip validation.
    */
-  applyZKProof(
-    zkpd: ZKProofData,
-    options?: { skipValidation?: boolean }
-  ): void {
+  applyZKProof(zkpd: ZKProofData, options?: { skipValidation?: boolean }): void {
     this.zkProofHandler.applyZKProof(zkpd, options)
   }
 
@@ -48,10 +42,7 @@ export class ZKSecp256r1Keypair extends Secp256r1Keypair {
    * Sign messages with a specific intent. By combining the message bytes with the intent before hashing and signing,
    * it ensures that a signed message is tied to a specific purpose and domain separator is provided
    */
-  async signWithIntent(
-    bytes: Uint8Array,
-    intent: IntentScope
-  ): Promise<SignatureWithBytes> {
+  async signWithIntent(bytes: Uint8Array, intent: IntentScope): Promise<SignatureWithBytes> {
     const signatureWithBytes = await super.signWithIntent(bytes, intent)
     return this.zkProofHandler.processSignature(signatureWithBytes)
   }
