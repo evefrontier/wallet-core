@@ -37,6 +37,7 @@
     "vitest": "^4.1.5"
   },
   "scripts": {
+    "install:playwright": "playwright install --with-deps",
     "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
     "build": "rm -rf dist && tsc --noEmit",
     "lint": "biome check",

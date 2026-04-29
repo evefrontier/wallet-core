@@ -39,7 +39,7 @@ jobs:
 
       - name: Install Test Dependencies
         shell: bash
-        run: pnpm exec playwright install --with-deps
+        run: pnpm run install:playwright
 
       - name: Test
         shell: bash
