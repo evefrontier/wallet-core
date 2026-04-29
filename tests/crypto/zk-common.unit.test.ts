@@ -1,47 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   isPartialZKLoginSignature,
-  type ZKProofData,
-  ZKProofHandler,
   type PartialZkLoginSignature,
+  ZKProofHandler,
 } from '#src/crypto'
-
-export const zkpdBase: ZKProofData = {
-  maxEpoch: 1,
-  partialZkLoginSignature: {
-    proofPoints: {
-      a: [
-        '1234567890123456789012345678901234567890123456789012345678901234567890123456',
-        '12345678901234567890123456789012345678901234567890123456789012345678901234567',
-        '1',
-      ],
-      b: [
-        [
-          '1234567890123456789012345678901234567890123456789012345678901234567890123456',
-          '12345678901234567890123456789012345678901234567890123456789012345678901234567',
-        ],
-        [
-          '1234567890123456789012345678901234567890123456789012345678901234567890123456',
-          '12345678901234567890123456789012345678901234567890123456789012345678901234567',
-        ],
-        ['1', '0'],
-      ],
-      c: [
-        '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678',
-        '12345678901234567890123456789012345678901234567890123456789012345678901234567',
-        '1',
-      ],
-    },
-    issBase64Details: {
-      value: 'issBase64DetailsValue',
-      indexMod4: 2,
-    },
-    headerBase64: 'headerBase64',
-  },
-  userSalt: '1234567890293856473923453',
-  tokenClaimSub: 'someSub',
-  tokenClaimAud: 'someAud',
-}
+import { zkpdBase } from '#tests/crypto/zk-proof-data'
 
 describe('isPartialZKLoginSignature', () => {
   const signature = {
@@ -96,13 +59,17 @@ describe('ZKProofHandler', () => {
     })
     it('should throw if tokenClaimSub is not a string with content', () => {
       const sut = new ZKProofHandler()
-      expect(() => sut.applyZKProof({ ...zkpdBase, tokenClaimSub: '' })).toThrow(
+      expect(() =>
+        sut.applyZKProof({ ...zkpdBase, tokenClaimSub: '' }),
+      ).toThrow(
         'applyZKProof expected property "tokenClaimSub" to be a string with content',
       )
     })
     it('should throw if tokenClaimAud is not a string with content', () => {
       const sut = new ZKProofHandler()
-      expect(() => sut.applyZKProof({ ...zkpdBase, tokenClaimAud: '' })).toThrow(
+      expect(() =>
+        sut.applyZKProof({ ...zkpdBase, tokenClaimAud: '' }),
+      ).toThrow(
         'applyZKProof expected property "tokenClaimAud" to be a string with content',
       )
     })
@@ -113,7 +80,9 @@ describe('ZKProofHandler', () => {
           ...zkpdBase,
           partialZkLoginSignature: {} as PartialZkLoginSignature,
         }),
-      ).toThrow('applyZKProof expected property "partialZkLoginSignature" in incorrect')
+      ).toThrow(
+        'applyZKProof expected property "partialZkLoginSignature" in incorrect',
+      )
     })
     it('should not throw if skipValidation is true, even if the input is incorrect', () => {
       const sut = new ZKProofHandler()
@@ -146,14 +115,35 @@ describe('ZKProofHandler', () => {
           { skipValidation: true },
         ),
       ).not.toThrow()
-      expect(sut['partialZkLoginSignature']).not.toHaveProperty('addressSeed')
-      expect(sut['maxEpoch']).toBe(-1)
-      expect(sut['userSalt']).toBe('')
-      expect(sut['tokenClaimSub']).toBe('')
-      expect(sut['tokenClaimAud']).toBe('')
-      expect(sut['partialZkLoginSignature']).toHaveProperty('proofPoints')
-      expect(sut['partialZkLoginSignature']).toHaveProperty('issBase64Details')
-      expect(sut['partialZkLoginSignature']).toHaveProperty('headerBase64')
+      expect(sut.partialZkLoginSignature).not.toHaveProperty('addressSeed')
+      expect(sut.maxEpoch).toBe(-1)
+      expect(sut.userSalt).toBe('')
+      expect(sut.tokenClaimSub).toBe('')
+      expect(sut.tokenClaimAud).toBe('')
+      expect(sut.partialZkLoginSignature).toHaveProperty('proofPoints')
+      expect(sut.partialZkLoginSignature).toHaveProperty('issBase64Details')
+      expect(sut.partialZkLoginSignature).toHaveProperty('headerBase64')
+    })
+    it('should not throw if skipValidation is true, even if the input is missing the partial signature', () => {
+      const sut = new ZKProofHandler()
+      expect(() =>
+        sut.applyZKProof(
+          {
+            ...zkpdBase,
+            maxEpoch: -1,
+            userSalt: '',
+            tokenClaimSub: '',
+            tokenClaimAud: '',
+            partialZkLoginSignature: undefined,
+          },
+          { skipValidation: true },
+        ),
+      ).not.toThrow()
+      expect(sut.partialZkLoginSignature).toBeUndefined()
+      expect(sut.maxEpoch).toBe(-1)
+      expect(sut.userSalt).toBe('')
+      expect(sut.tokenClaimSub).toBe('')
+      expect(sut.tokenClaimAud).toBe('')
     })
   })
 })

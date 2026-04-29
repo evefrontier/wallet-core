@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { ZKWebCryptoSigner } from '#src/crypto'
+import {
+  type IntentScope,
+  parseSerializedSignature,
+} from '@mysten/sui/cryptography'
 import { Secp256r1PublicKey } from '@mysten/sui/keypairs/secp256r1'
 import { fromBase64, toBase64 } from '@mysten/sui/utils'
-import { parseSerializedSignature, type IntentScope } from '@mysten/sui/cryptography'
-import { zkpdBase } from '#tests/crypto/zk-common.unit.test'
 import { parseZkLoginSignature } from '@mysten/sui/zklogin'
+import { describe, expect, it } from 'vitest'
+import { ZKWebCryptoSigner } from '#src/crypto'
+import { zkpdBase } from '#tests/crypto/zk-proof-data'
 
 describe('ZKWebCryptoSigner', async () => {
   it('should be constructable', async () => {
@@ -24,6 +27,27 @@ describe('ZKWebCryptoSigner', async () => {
     expect(sut.getPublicKey().toRawBytes()).toEqual(refPublicKey.toRawBytes())
   })
 
+  describe('applyZKProof', async () => {
+    it('should not throw if given normal input', async () => {
+      const sut = await ZKWebCryptoSigner.generate()
+      expect(() => sut.applyZKProof(zkpdBase)).not.toThrow()
+    })
+  })
+
+  it('should apply the given proof data', async () => {
+    const sut = await ZKWebCryptoSigner.generate()
+    expect(sut).toBeInstanceOf(ZKWebCryptoSigner)
+    sut.applyZKProof(zkpdBase)
+    const sutZkProofData = sut.getProofData()
+    expect(sutZkProofData.maxEpoch).toBe(zkpdBase.maxEpoch)
+    expect(sutZkProofData.userSalt).toBe(zkpdBase.userSalt)
+    expect(sutZkProofData.tokenClaimSub).toBe(zkpdBase.tokenClaimSub)
+    expect(sutZkProofData.tokenClaimAud).toBe(zkpdBase.tokenClaimAud)
+    expect(sutZkProofData.partialZkLoginSignature).toEqual(
+      zkpdBase.partialZkLoginSignature,
+    )
+  })
+
   it('should sign and verify without ZK', async () => {
     const signer = await ZKWebCryptoSigner.generate({ extractable: true })
     const bytesToSign = new Uint8Array([1, 2, 3])
@@ -40,7 +64,10 @@ describe('ZKWebCryptoSigner', async () => {
     expect(ref).toBeInstanceOf(ZKWebCryptoSigner)
     const refPrivateKey = ref.privateKey
     expect(refPrivateKey).toBeInstanceOf(CryptoKey)
-    const exported = await globalThis.crypto.subtle.exportKey('jwk', refPrivateKey)
+    const exported = await globalThis.crypto.subtle.exportKey(
+      'jwk',
+      refPrivateKey,
+    )
 
     const importedKey = await globalThis.crypto.subtle.importKey(
       'jwk',
@@ -52,11 +79,16 @@ describe('ZKWebCryptoSigner', async () => {
       true,
       ['sign'],
     )
-    const sut = new ZKWebCryptoSigner(importedKey, ref.getPublicKey().toRawBytes())
+    const sut = new ZKWebCryptoSigner(
+      importedKey,
+      ref.getPublicKey().toRawBytes(),
+    )
     expect(sut).toBeInstanceOf(ZKWebCryptoSigner)
 
     // Might be the same instance? so probably not a good expectation.
-    expect(ref.getPublicKey().toRawBytes()).toEqual(sut.getPublicKey().toRawBytes())
+    expect(ref.getPublicKey().toRawBytes()).toEqual(
+      sut.getPublicKey().toRawBytes(),
+    )
     // can we verify a sig from the reference with the sut's public key?
     const bytesToSign = new Uint8Array([1, 2, 3])
     const intent = 'TransactionData' as IntentScope
@@ -119,17 +151,25 @@ describe('ZKWebCryptoSigner', async () => {
 
     // getZkLoginSignature returns the base64 of the signature with a byte prefix
     // indicating the signature scheme, which is 5 for ZkLogin.
-    const schemeAndZkLoginSignatureBytes = fromBase64(signatureWithBytes.signature)
+    const schemeAndZkLoginSignatureBytes = fromBase64(
+      signatureWithBytes.signature,
+    )
     const zkLoginSignatureBytes = schemeAndZkLoginSignatureBytes.slice(1)
     const parsedZkLoginSignature = parseZkLoginSignature(zkLoginSignatureBytes)
     const userSignature = parsedZkLoginSignature.userSignature
     // the userSignature is from toSerializedSignature where the key scheme could be Secp256r1 or ED25519 etc
-    const parsedUserSignature = parseSerializedSignature(toBase64(userSignature))
+    const parsedUserSignature = parseSerializedSignature(
+      toBase64(userSignature),
+    )
 
     // Verify the actual signature
     const isValid = await signer
       .getPublicKey()
-      .verifyWithIntent(bytesToSign, parsedUserSignature.signature!, intent)
+      .verifyWithIntent(
+        bytesToSign,
+        parsedUserSignature.signature as Uint8Array<ArrayBufferLike>,
+        intent,
+      )
     expect(isValid).toBe(true)
     // verify against the ZK Proof data that was applied earlier (signer.applyZKProof)
     expect(parsedZkLoginSignature.inputs.proofPoints).toStrictEqual(
@@ -141,7 +181,9 @@ describe('ZKWebCryptoSigner', async () => {
     expect(parsedZkLoginSignature.inputs.headerBase64).toBe(
       zkpdBase.partialZkLoginSignature?.headerBase64,
     )
-    expect(parsedZkLoginSignature.inputs.addressSeed).toBe(signer['zkProofHandler'].addressSeed)
+    expect(parsedZkLoginSignature.inputs.addressSeed).toBe(
+      signer.getAddressSeed(),
+    )
     expect(parsedZkLoginSignature.maxEpoch).toBe(zkpdBase.maxEpoch.toString())
 
     // Verify that the user signature contains the correct scheme and public key
@@ -149,7 +191,9 @@ describe('ZKWebCryptoSigner', async () => {
     expect(parsedUserSignature).toHaveProperty('publicKey')
     if ('publicKey' in parsedUserSignature) {
       expect(parsedUserSignature.publicKey).toBeInstanceOf(Uint8Array)
-      expect(parsedUserSignature.publicKey).toStrictEqual(signer.getPublicKey().toRawBytes())
+      expect(parsedUserSignature.publicKey).toStrictEqual(
+        signer.getPublicKey().toRawBytes(),
+      )
     }
   })
 })

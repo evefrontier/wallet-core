@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { ZKEd25519Keypair } from '#src/crypto/zk-ed25519-keypair'
+import {
+  type IntentScope,
+  parseSerializedSignature,
+} from '@mysten/sui/cryptography'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { parseSerializedSignature, type IntentScope } from '@mysten/sui/cryptography'
-import { zkpdBase } from '#tests/crypto/zk-common.unit.test'
 import { fromBase64, toBase64 } from '@mysten/sui/utils'
 import { parseZkLoginSignature } from '@mysten/sui/zklogin'
+import { describe, expect, it } from 'vitest'
+import { ZKEd25519Keypair } from '#src/crypto/zk-ed25519-keypair'
+import { zkpdBase } from '#tests/crypto/zk-proof-data'
 import { Uint8ArrayFromBase64 } from '#tests/utils'
 
 describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
@@ -22,17 +25,18 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
 
   it('should to and from ZKEd25519KeypairData correctly', () => {
     const ref = ZKEd25519Keypair.generate()
-    ref.applyZKProof(zkpdBase)
+    const refZkProofData = ref.applyZKProof(zkpdBase)
     const keypairData = ref.toZKEd25519KeypairData()
     const sut = ZKEd25519Keypair.fromZKEd25519KeypairData(keypairData)
     expect(sut).toBeInstanceOf(ZKEd25519Keypair)
     expect(sut.getSecretKey()).toBe(ref.getSecretKey())
-    expect(sut['zkProofHandler']['maxEpoch']).toBe(ref['zkProofHandler']['maxEpoch'])
-    expect(sut['zkProofHandler']['userSalt']).toBe(ref['zkProofHandler']['userSalt'])
-    expect(sut['zkProofHandler']['tokenClaimSub']).toBe(ref['zkProofHandler']['tokenClaimSub'])
-    expect(sut['zkProofHandler']['tokenClaimAud']).toBe(ref['zkProofHandler']['tokenClaimAud'])
-    expect(sut['zkProofHandler']['partialZkLoginSignature']).toEqual(
-      ref['zkProofHandler']['partialZkLoginSignature'],
+    const sutZkProofData = sut.getProofData()
+    expect(sutZkProofData.maxEpoch).toBe(refZkProofData.maxEpoch)
+    expect(sutZkProofData.userSalt).toBe(refZkProofData.userSalt)
+    expect(sutZkProofData.tokenClaimSub).toBe(refZkProofData.tokenClaimSub)
+    expect(sutZkProofData.tokenClaimAud).toBe(refZkProofData.tokenClaimAud)
+    expect(sutZkProofData.partialZkLoginSignature).toEqual(
+      refZkProofData.partialZkLoginSignature,
     )
     expect(sut.toSuiAddress()).toBe(ref.toSuiAddress())
   })
@@ -41,7 +45,10 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     const seed = '0x123456789012345678901'
     const ref = ZKEd25519Keypair.deriveKeypairFromSeed(seed)
     const intent = 'TransactionData' as IntentScope
-    const { signature } = await ref.signWithIntent(new Uint8Array([1, 2, 3]), intent)
+    const { signature } = await ref.signWithIntent(
+      new Uint8Array([1, 2, 3]),
+      intent,
+    )
     expect(signature).toBe(
       'AHWKc5xpmRMg+ThF9UVF2nKwVan5XwsKGlBAfe6AzA5ZhThkl9Rh5QXEmKmwZCVq6pulpG7TbnUDhNkCbbgQbQe4wQR3rQjfYSMB7oXfwpBXKKVChxrnMsu50Qz/iBS/Lg==',
     )
@@ -70,17 +77,26 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
 
     // getZkLoginSignature returns the base64 of the signature with a byte prefix
     // indicating the signature scheme, which is 5 for ZkLogin.
-    const schemeAndZkLoginSignatureBytes = fromBase64(signatureWithBytes.signature)
+    const schemeAndZkLoginSignatureBytes = fromBase64(
+      signatureWithBytes.signature,
+    )
     const zkLoginSignatureBytes = schemeAndZkLoginSignatureBytes.slice(1)
     const parsedZkLoginSignature = parseZkLoginSignature(zkLoginSignatureBytes)
     const userSignature = parsedZkLoginSignature.userSignature
     // the userSignature is from toSerializedSignature where the key scheme could be Secp256r1 or ED25519 etc
-    const parsedUserSignature = parseSerializedSignature(toBase64(userSignature))
+    const parsedUserSignature = parseSerializedSignature(
+      toBase64(userSignature),
+    )
 
     // Verify the actual signature
+    expect(parsedUserSignature).toHaveProperty('signature')
     const isValid = await signer
       .getPublicKey()
-      .verifyWithIntent(bytesToSign, parsedUserSignature.signature!, intent)
+      .verifyWithIntent(
+        bytesToSign,
+        parsedUserSignature.signature as Uint8Array<ArrayBufferLike>,
+        intent,
+      )
     expect(isValid).toBe(true)
     // verify against the ZK Proof data that was applied earlier (signer.applyZKProof)
     expect(parsedZkLoginSignature.inputs.proofPoints).toStrictEqual(
@@ -92,7 +108,9 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     expect(parsedZkLoginSignature.inputs.headerBase64).toBe(
       zkpdBase.partialZkLoginSignature?.headerBase64,
     )
-    expect(parsedZkLoginSignature.inputs.addressSeed).toBe(signer['zkProofHandler'].addressSeed)
+    expect(parsedZkLoginSignature.inputs.addressSeed).toBe(
+      signer.getAddressSeed(),
+    )
     expect(parsedZkLoginSignature.maxEpoch).toBe(zkpdBase.maxEpoch.toString())
 
     // Verify that the user signature contains the correct scheme and public key
@@ -100,7 +118,9 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     expect(parsedUserSignature).toHaveProperty('publicKey')
     if ('publicKey' in parsedUserSignature) {
       expect(parsedUserSignature.publicKey).toBeInstanceOf(Uint8Array)
-      expect(parsedUserSignature.publicKey).toStrictEqual(signer.getPublicKey().toRawBytes())
+      expect(parsedUserSignature.publicKey).toStrictEqual(
+        signer.getPublicKey().toRawBytes(),
+      )
     }
   })
 
@@ -125,7 +145,8 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     })
 
     it('should deriveKeypair the same as a keypair generated with "sui keytool"', () => {
-      const mnemonic = 'test test test test test test test test test test test junk'
+      const mnemonic =
+        'test test test test test test test test test test test junk'
       const expectedSuiAddress =
         '0xc88ef07b9b8b2fc3b7daad9478f4e1337f01792e2eab9c3794494e610636026e'
       const ref = Ed25519Keypair.deriveKeypair(mnemonic)

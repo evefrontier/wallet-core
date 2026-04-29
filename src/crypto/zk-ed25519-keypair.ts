@@ -3,7 +3,7 @@ import {
   type IntentScope,
   type SignatureWithBytes,
 } from '@mysten/sui/cryptography'
-import { Ed25519Keypair, type Ed25519KeypairData } from '@mysten/sui/keypairs/ed25519'
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { type ZKProofData, ZKProofHandler } from '#src/crypto'
 
 export interface ZKEd25519KeypairData {
@@ -17,24 +17,39 @@ export interface ZKEd25519KeypairData {
 export class ZKEd25519Keypair extends Ed25519Keypair {
   protected zkProofHandler: ZKProofHandler = new ZKProofHandler()
 
-  constructor(keypair?: Ed25519KeypairData | undefined) {
-    super(keypair)
-  }
-
   /**
    * Applies the neccessary data to make this instance capable of performing ZKLogin signing.
    * @param zkpd {ZKProofData}
    * @param options optional object that can have `skipValidation` set in order to skip validation.
    */
-  applyZKProof(zkpd: ZKProofData, options?: { skipValidation?: boolean }): void {
-    this.zkProofHandler.applyZKProof(zkpd, options)
+  applyZKProof(
+    zkpd: ZKProofData,
+    options?: { skipValidation?: boolean },
+  ): ZKProofData {
+    return this.zkProofHandler.applyZKProof(zkpd, options)
+  }
+
+  /**
+   * Returns the zk proof data currently in use
+   * @returns {ZKProofData} the proof data in use
+   */
+  getProofData(): ZKProofData {
+    return this.zkProofHandler.getProofData()
+  }
+
+  /**
+   * Returns the current address seed that is generated when the proof data is applied.
+   * @returns {string} the current address seed
+   */
+  getAddressSeed(): string {
+    return this.zkProofHandler.getAddressSeed()
   }
 
   /**
    * Generate a new random Ed25519 keypair
    */
   static override generate(): ZKEd25519Keypair {
-    const result = super.generate()
+    const result = Ed25519Keypair.generate()
     const parsedKeyPair = decodeSuiPrivateKey(result.getSecretKey())
     const keypair = {
       publicKey: result.getPublicKey().toRawBytes(),
@@ -51,7 +66,7 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
   toZKEd25519KeypairData(): ZKEd25519KeypairData {
     return {
       secretKey: this.getSecretKey(),
-      zkProofData: this.zkProofHandler.toZKProofData() as ZKProofData,
+      zkProofData: this.getProofData() as ZKProofData,
     }
   }
 
@@ -62,7 +77,10 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
     keypairData: ZKEd25519KeypairData,
     options?: { skipValidation?: boolean },
   ): ZKEd25519Keypair {
-    const keyPair = ZKEd25519Keypair.fromSecretKey(keypairData.secretKey, options)
+    const keyPair = ZKEd25519Keypair.fromSecretKey(
+      keypairData.secretKey,
+      options,
+    )
     keyPair.applyZKProof(keypairData.zkProofData, options)
     return keyPair
   }
@@ -81,7 +99,7 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
     secretKey: Uint8Array | string,
     options?: { skipValidation?: boolean },
   ): ZKEd25519Keypair {
-    const result = super.fromSecretKey(secretKey, options)
+    const result = Ed25519Keypair.fromSecretKey(secretKey, options)
     const parsedKeyPair = decodeSuiPrivateKey(result.getSecretKey())
     const keypair = {
       publicKey: result.getPublicKey().toRawBytes(),
@@ -94,7 +112,10 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
    * Sign messages with a specific intent. By combining the message bytes with the intent before hashing and signing,
    * it ensures that a signed message is tied to a specific purpose and domain separator is provided
    */
-  async signWithIntent(bytes: Uint8Array, intent: IntentScope): Promise<SignatureWithBytes> {
+  async signWithIntent(
+    bytes: Uint8Array,
+    intent: IntentScope,
+  ): Promise<SignatureWithBytes> {
     const signatureWithBytes = await super.signWithIntent(bytes, intent)
     return this.zkProofHandler.processSignature(signatureWithBytes)
   }
@@ -107,7 +128,7 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
    * be compliant to SLIP-0010 in form m/44'/784'/{account_index}'/{change_index}'/{address_index}'.
    */
   static deriveKeypair(mnemonics: string, path?: string): ZKEd25519Keypair {
-    const result = super.deriveKeypair(mnemonics, path)
+    const result = Ed25519Keypair.deriveKeypair(mnemonics, path)
     const parsedKeyPair = decodeSuiPrivateKey(result.getSecretKey())
     const keypair = {
       publicKey: result.getPublicKey().toRawBytes(),
@@ -124,8 +145,11 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
    *
    * @param seed - The seed as a hex string or Uint8Array.
    */
-  static deriveKeypairFromSeed(seed: string | Uint8Array, path?: string): ZKEd25519Keypair {
-    const result = super.deriveKeypairFromSeed(seed, path)
+  static deriveKeypairFromSeed(
+    seed: string | Uint8Array,
+    path?: string,
+  ): ZKEd25519Keypair {
+    const result = Ed25519Keypair.deriveKeypairFromSeed(seed, path)
     const parsedKeyPair = decodeSuiPrivateKey(result.getSecretKey())
     const keypair = {
       publicKey: result.getPublicKey().toRawBytes(),

@@ -25,8 +25,11 @@ export const ASSEMBLY_TYPE_API_STRING: Record<Assemblies, string> = {
   [Assemblies.Refinery]: 'refineries',
 } as const
 
-export type SponsoredTransactionAssemblyType = (typeof ASSEMBLY_TYPE_API_STRING)[Assemblies]
+export type SponsoredTransactionAssemblyType =
+  (typeof ASSEMBLY_TYPE_API_STRING)[Assemblies]
 
-export function getAssemblyTypeApiString(type: Assemblies): SponsoredTransactionAssemblyType {
+export function getAssemblyTypeApiString(
+  type: Assemblies,
+): SponsoredTransactionAssemblyType {
   return ASSEMBLY_TYPE_API_STRING[type]
 }
