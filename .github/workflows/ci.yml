@@ -30,19 +30,15 @@ jobs:
           cache: 'pnpm'
 
       - name: Install Dependencies
-        shell: bash
         run: pnpm install
 
       - name: Lint
-        shell: bash
         run: pnpm run lint
 
       - name: Install Test Dependencies
-        shell: bash
-        run: pnpm run install:playwright
+        run: pnpm exec playwright install --with-deps
 
       - name: Test
-        shell: bash
         run: pnpm run test:coverage
 
       - name: Report Coverage
