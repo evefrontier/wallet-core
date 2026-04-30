@@ -6,9 +6,9 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    "./crypto": "./crypto/index.ts",
-    "./wallet-standard": "./wallet-standard/index.ts",
-    "./definitions": "./definitions/index.ts"
+    "./crypto": "./src/crypto/index.ts",
+    "./wallet-standard": "./src/wallet-standard/index.ts",
+    "./definitions": "./src/definitions/index.ts"
   },
   "imports": {
     "#src/*": [
@@ -38,8 +38,8 @@
     "vitest": "^4.1.5"
   },
   "scripts": {
-    "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
-    "build": "rm -rf dist && tsc --noEmit",
+    "clean": "rm -rf tsconfig.tsbuildinfo",
+    "build": "tsc --noEmit",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "test": "vitest run",
