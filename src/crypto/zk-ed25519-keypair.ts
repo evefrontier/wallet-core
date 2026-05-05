@@ -4,12 +4,8 @@ import {
   type SignatureWithBytes,
 } from '@mysten/sui/cryptography'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { type ZKProofData, ZKProofHandler } from '#src/crypto'
-
-export interface ZKEd25519KeypairData {
-  secretKey: Uint8Array | string
-  zkProofData: ZKProofData
-}
+import { ZKProofHandler } from '#src/crypto'
+import type { ZKEd25519KeypairData, ZKProofData } from '#src/types'
 
 /**
  * Keypair / Signer that can do ZKLogin base signing

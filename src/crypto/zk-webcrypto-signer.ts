@@ -1,6 +1,7 @@
 import { WebCryptoSigner } from '@mysten/signers/webcrypto'
 import type { IntentScope, SignatureWithBytes } from '@mysten/sui/cryptography'
-import { type ZKProofData, ZKProofHandler } from '#src/crypto'
+import { ZKProofHandler } from '#src/crypto'
+import type { ZKProofData } from '#src/types'
 
 export class ZKWebCryptoSigner extends WebCryptoSigner {
   protected zkProofHandler: ZKProofHandler = new ZKProofHandler()

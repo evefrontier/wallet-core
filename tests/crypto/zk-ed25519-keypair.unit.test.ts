@@ -8,7 +8,7 @@ import { parseZkLoginSignature } from '@mysten/sui/zklogin'
 import { describe, expect, it } from 'vitest'
 import { ZKEd25519Keypair } from '#src/crypto/zk-ed25519-keypair'
 import { zkpdBase } from '#tests/crypto/zk-proof-data'
-import { Uint8ArrayFromBase64 } from '#tests/utils'
+import { Uint8ArrayFromBase64 } from '#tests/test-utils/index.ts'
 
 describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
   it('should be constructable', async () => {

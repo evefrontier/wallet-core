@@ -7,8 +7,10 @@
   "type": "module",
   "exports": {
     "./crypto": "./src/crypto/index.ts",
-    "./wallet-standard": "./src/wallet-standard/index.ts",
-    "./definitions": "./src/definitions/index.ts"
+    "./definitions": "./src/definitions/index.ts",
+    "./types": "./src/types/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./wallet-standard-extensions": "./src/wallet-standard-extensions/index.ts"
   },
   "imports": {
     "#src/*": [
@@ -26,8 +28,10 @@
     "LICENSE",
     "README.md",
     "src/crypto",
-    "src/wallet-standard",
-    "src/definitions"
+    "src/definitions",
+    "src/types",
+    "src/utils",
+    "src/wallet-standard-extensions"
   ],
   "devDependencies": {
     "@biomejs/biome": "2.4.13",

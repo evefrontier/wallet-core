@@ -32,8 +32,10 @@ pnpm add @evefrontier/signer-core
 Supported package subpath exports:
 
 - @evefrontier/signer-core/crypto
-- @evefrontier/signer-core/wallet-standard
 - @evefrontier/signer-core/definitions
+- @evefrontier/signer-core/types
+- @evefrontier/signer-core/utils
+- @evefrontier/signer-core/wallet-standard-extensions
 
 ## Usage
 

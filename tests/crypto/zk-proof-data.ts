@@ -1,4 +1,4 @@
-import type { ZKProofData } from '#src/crypto'
+import type { ZKProofData } from '#src/types'
 
 export const zkpdBase: ZKProofData = {
   maxEpoch: 1,

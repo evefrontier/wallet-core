@@ -1,16 +1,14 @@
 import type { SignatureWithBytes } from '@mysten/sui/cryptography'
 import { genAddressSeed, getZkLoginSignature } from '@mysten/sui/zklogin'
+import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
+import {
+  hasTypedArrayPropertyWithLength,
+  hasTypedProperty,
+  is3x2ArrayOfStrings,
+} from '#src/utils'
 
 /**
- * A partial ZKLogin Signature.
- */
-export type PartialZkLoginSignature = Omit<
-  Parameters<typeof getZkLoginSignature>['0']['inputs'],
-  'addressSeed'
->
-
-/**
- * Checks if obj is a PartialZkLoginSignature
+ * Checks if `obj` is a PartialZkLoginSignature
  * @param obj {unknown}
  * @returns true if `obj` includes properties with the same types found in
  * a PartialZkLoginSignature
@@ -30,52 +28,32 @@ export function isPartialZKLoginSignature(
         typeof partial.issBase64Details === 'object' &&
         typeof partial.headerBase64 === 'string' &&
         // issBase64Details
-        'value' in partial.issBase64Details &&
-        'indexMod4' in partial.issBase64Details &&
-        typeof partial.issBase64Details.value === 'string' &&
-        typeof partial.issBase64Details.indexMod4 === 'number' &&
+        hasTypedProperty(partial.issBase64Details, 'value', 'string') &&
+        hasTypedProperty(partial.issBase64Details, 'indexMod4', 'number') &&
         // proofPoints
-        'a' in partial.proofPoints &&
-        'b' in partial.proofPoints &&
-        'c' in partial.proofPoints &&
-        Array.isArray(partial.proofPoints.a) &&
-        Array.isArray(partial.proofPoints.b) &&
-        Array.isArray(partial.proofPoints.c) &&
-        partial.proofPoints.a.length === 3 &&
-        partial.proofPoints.b.length === 3 &&
-        partial.proofPoints.c.length === 3 &&
-        typeof (partial.proofPoints.a as unknown[])[0] === 'string' &&
-        typeof (partial.proofPoints.a as unknown[])[1] === 'string' &&
-        typeof (partial.proofPoints.a as unknown[])[2] === 'string' &&
-        // b
-        Array.isArray((partial.proofPoints.b as unknown[])[0]) &&
-        Array.isArray((partial.proofPoints.b as unknown[])[1]) &&
-        Array.isArray((partial.proofPoints.b as unknown[])[2]) &&
-        ((b: unknown[]): boolean => {
-          return (
-            typeof (b[0] as unknown[])[0] === 'string' &&
-            typeof (b[0] as unknown[])[1] === 'string' &&
-            typeof (b[1] as unknown[])[0] === 'string' &&
-            typeof (b[1] as unknown[])[1] === 'string' &&
-            typeof (b[2] as unknown[])[0] === 'string' &&
-            typeof (b[2] as unknown[])[1] === 'string'
-          )
-        })(partial.proofPoints.b as unknown[]) &&
-        // c
-        typeof (partial.proofPoints.c as unknown[])[0] === 'string' &&
-        typeof (partial.proofPoints.c as unknown[])[1] === 'string' &&
-        typeof (partial.proofPoints.c as unknown[])[2] === 'string'
+        hasTypedArrayPropertyWithLength(
+          partial.proofPoints,
+          'a',
+          'string',
+          3,
+        ) &&
+        hasTypedArrayPropertyWithLength(
+          partial.proofPoints,
+          'b',
+          'object',
+          3,
+        ) &&
+        hasTypedArrayPropertyWithLength(
+          partial.proofPoints,
+          'c',
+          'string',
+          3,
+        ) &&
+        // b is a 3x2 array of strings
+        is3x2ArrayOfStrings(partial.proofPoints.b)
       )
     })(obj as PartialZkLoginSignature)
   )
-}
-
-export interface ZKProofData {
-  maxEpoch: number
-  partialZkLoginSignature?: PartialZkLoginSignature
-  userSalt: string
-  tokenClaimSub: string
-  tokenClaimAud: string
 }
 
 export class ZKProofHandler implements ZKProofData {
@@ -127,7 +105,7 @@ export class ZKProofHandler implements ZKProofData {
       const throwIfNotStringOrEmpty = (data: unknown, name: string) => {
         if (!isStringWithContent(data)) {
           throw new Error(
-            `applyZKProof expected property "${name}" to be a string with content`,
+            `[applyZKProof] expected property "${name}" to be a string with content`,
           )
         }
       }
@@ -136,12 +114,12 @@ export class ZKProofHandler implements ZKProofData {
       }
       if (!isNumberGreaterThan(zkpd.maxEpoch, 0)) {
         throw new Error(
-          `applyZKProof expected property "$maxEpoch" to be a number greater than 0`,
+          `[applyZKProof] expected property "$maxEpoch" to be a number greater than 0`,
         )
       }
       if (!isPartialZKLoginSignature(zkpd.partialZkLoginSignature)) {
         throw new Error(
-          `applyZKProof expected property "partialZkLoginSignature" in incorrect`,
+          `[applyZKProof] expected property "partialZkLoginSignature" in incorrect`,
         )
       }
       throwIfNotStringOrEmpty(zkpd.userSalt, 'userSalt')
@@ -164,6 +142,10 @@ export class ZKProofHandler implements ZKProofData {
     return this.getProofData()
   }
 
+  /**
+   * Sets the address seed by calling genAddressSeed with the current salt and token claim data.
+   * This is called when new proof data is applied.
+   */
   protected setAddressSeed(): void {
     this.addressSeed = genAddressSeed(
       BigInt(this.userSalt as string),
@@ -173,6 +155,22 @@ export class ZKProofHandler implements ZKProofData {
     ).toString()
   }
 
+  /**
+   * Called from `signWithIntent` in the ZK enabled keypair/signer classes.
+   * This is how we end up with a ZK Login signature instead of a normal
+   * signature when the proof data is applied.
+   * @param signatureWithBytes the normal signature with bytes
+   *   that is returned from the underlying keypair/signer
+   * @returns a possibly modified SignatureWithBytes that includes a ZK Login
+   *   signature if the proof data is applied, or the original
+   *   signatureWithBytes if not.
+   * Note that the bytes are not modified in either case, as the ZK Login signature
+   * is generated in a way that it can be verified against the original bytes.
+   * This means that the ZK Login signature is essentially a wrapper around the
+   * original signature that includes the proof data, and can be verified in a way
+   * that extracts the original signature and checks it against the original bytes.
+   * This can be seen in the keypair/signer tests where `parseZkLoginSignature` is used.
+   */
   processSignature(signatureWithBytes: SignatureWithBytes): SignatureWithBytes {
     const { signature, bytes } = signatureWithBytes
     if (this.partialZkLoginSignature === undefined) {

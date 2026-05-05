@@ -4,7 +4,8 @@ import {
   type SignatureWithBytes,
 } from '@mysten/sui/cryptography'
 import { Secp256r1Keypair } from '@mysten/sui/keypairs/secp256r1'
-import { type ZKProofData, ZKProofHandler } from '#src/crypto'
+import { ZKProofHandler } from '#src/crypto'
+import type { ZKProofData } from '#src/types'
 
 /**
  * A wrapper around Secp256r1Keypair that can hold ZKLogin proof data and apply it to the signing process.
