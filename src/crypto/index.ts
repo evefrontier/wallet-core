@@ -1,5 +1,6 @@
 export {
   isPartialZKLoginSignature,
+  withZKProofHandling,
   ZKProofHandler,
 } from './zk-common'
 

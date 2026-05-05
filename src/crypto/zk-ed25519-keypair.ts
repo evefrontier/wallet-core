@@ -1,50 +1,18 @@
-import {
-  decodeSuiPrivateKey,
-  type IntentScope,
-  type SignatureWithBytes,
-} from '@mysten/sui/cryptography'
+import { decodeSuiPrivateKey } from '@mysten/sui/cryptography'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { ZKProofHandler } from '#src/crypto'
 import type { ZKEd25519KeypairData, ZKProofData } from '#src/types'
+import { withZKProofHandling } from './zk-common'
+
+const ZKEd25519KeypairBase = withZKProofHandling(Ed25519Keypair)
 
 /**
  * Keypair / Signer that can do ZKLogin base signing
  */
-export class ZKEd25519Keypair extends Ed25519Keypair {
-  protected zkProofHandler: ZKProofHandler = new ZKProofHandler()
-
-  /**
-   * Applies the neccessary data to make this instance capable of performing ZKLogin signing.
-   * @param zkpd {ZKProofData}
-   * @param options optional object that can have `skipValidation` set in order to skip validation.
-   */
-  applyZKProof(
-    zkpd: ZKProofData,
-    options?: { skipValidation?: boolean },
-  ): ZKProofData {
-    return this.zkProofHandler.applyZKProof(zkpd, options)
-  }
-
-  /**
-   * Returns the zk proof data currently in use
-   * @returns {ZKProofData} the proof data in use
-   */
-  getProofData(): ZKProofData {
-    return this.zkProofHandler.getProofData()
-  }
-
-  /**
-   * Returns the current address seed that is generated when the proof data is applied.
-   * @returns {string} the current address seed
-   */
-  getAddressSeed(): string {
-    return this.zkProofHandler.getAddressSeed()
-  }
-
+export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
   /**
    * Generate a new random Ed25519 keypair
    */
-  static override generate(): ZKEd25519Keypair {
+  static generate(): ZKEd25519Keypair {
     const result = Ed25519Keypair.generate()
     const parsedKeyPair = decodeSuiPrivateKey(result.getSecretKey())
     const keypair = {
@@ -91,7 +59,7 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
    * @param secretKey secret key as a byte array or Bech32 secret key string
    * @param options: skip secret key validation
    */
-  static override fromSecretKey(
+  static fromSecretKey(
     secretKey: Uint8Array | string,
     options?: { skipValidation?: boolean },
   ): ZKEd25519Keypair {
@@ -102,18 +70,6 @@ export class ZKEd25519Keypair extends Ed25519Keypair {
       secretKey: parsedKeyPair.secretKey,
     }
     return new ZKEd25519Keypair(keypair)
-  }
-
-  /**
-   * Sign messages with a specific intent. By combining the message bytes with the intent before hashing and signing,
-   * it ensures that a signed message is tied to a specific purpose and domain separator is provided
-   */
-  async signWithIntent(
-    bytes: Uint8Array,
-    intent: IntentScope,
-  ): Promise<SignatureWithBytes> {
-    const signatureWithBytes = await super.signWithIntent(bytes, intent)
-    return this.zkProofHandler.processSignature(signatureWithBytes)
   }
 
   /**

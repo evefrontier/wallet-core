@@ -1,4 +1,4 @@
-import type { SignatureWithBytes } from '@mysten/sui/cryptography'
+import type { IntentScope, SignatureWithBytes } from '@mysten/sui/cryptography'
 import { genAddressSeed, getZkLoginSignature } from '@mysten/sui/zklogin'
 import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
@@ -6,6 +6,92 @@ import {
   hasTypedProperty,
   is3x2ArrayOfStrings,
 } from '#src/utils'
+
+type Constructor<TInstance = object> = abstract new (
+  // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin constructor constraints require any[].
+  ...args: any[]
+) => TInstance
+
+type IntentSigner = {
+  signWithIntent(
+    bytes: Uint8Array,
+    intent: IntentScope,
+  ): Promise<SignatureWithBytes>
+}
+
+type ZKProofHandling = {
+  zkProofHandler: ZKProofHandler
+
+  /**
+   * Applies the neccessary data to make this instance capable of performing ZKLogin signing.
+   * @param zkpd {ZKProofData}
+   * @param options optional object that can have `skipValidation` set in order to skip validation.
+   */
+  applyZKProof(
+    zkpd: ZKProofData,
+    options?: { skipValidation?: boolean },
+  ): ZKProofData
+
+  /**
+   * Returns the zk proof data currently in use
+   * @returns {ZKProofData} the proof data in use
+   */
+  getProofData(): ZKProofData
+
+  /**
+   * Returns the current address seed that is generated when the proof data is applied.
+   * @returns {string} the current address seed
+   */
+  getAddressSeed(): string
+}
+
+/**
+ * Adds ZK proof-aware behavior to a signer class.
+ *
+ * The returned class keeps the original constructor arguments unchanged.
+ * @param {TBase} Base
+ * @returns {InstanceType<TBase> & ZKProofHandling}
+ */
+export function withZKProofHandling<TBase extends Constructor<IntentSigner>>(
+  Base: TBase,
+): abstract new (
+  ...args: ConstructorParameters<TBase>
+) => InstanceType<TBase> & ZKProofHandling {
+  abstract class WithZKProofHandling extends Base {
+    protected zkProofHandler: ZKProofHandler = new ZKProofHandler()
+
+    applyZKProof(
+      zkpd: ZKProofData,
+      options?: { skipValidation?: boolean },
+    ): ZKProofData {
+      return this.zkProofHandler.applyZKProof(zkpd, options)
+    }
+
+    getProofData(): ZKProofData {
+      return this.zkProofHandler.getProofData()
+    }
+
+    getAddressSeed(): string {
+      return this.zkProofHandler.getAddressSeed()
+    }
+
+    /**
+     * Sign messages with a specific intent. By combining the message bytes with the intent before hashing and signing,
+     * it ensures that a signed message is tied to a specific purpose and domain separator is provided
+     */
+    override async signWithIntent(
+      bytes: Uint8Array,
+      intent: IntentScope,
+    ): Promise<SignatureWithBytes> {
+      const signatureWithBytes = await super.signWithIntent(bytes, intent)
+      return this.zkProofHandler.processSignature(signatureWithBytes)
+    }
+  }
+
+  return WithZKProofHandling as unknown as abstract new (
+    ...args: ConstructorParameters<TBase>
+  ) => InstanceType<TBase> & ZKProofHandling
+}
 
 /**
  * Checks if `obj` is a PartialZkLoginSignature
