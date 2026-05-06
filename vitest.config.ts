@@ -22,9 +22,7 @@ export default defineConfig({
     projects: [
       {
         test: {
-          include: [
-            'tests/**/*.unit.{test,spec}.ts',
-          ],
+          include: ['tests/**/*.unit.{test,spec}.ts'],
           name: 'unit',
           environment: 'node',
         },
