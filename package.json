@@ -1,5 +1,5 @@
 {
-  "name": "@evefrontier/signer-core",
+  "name": "@evefrontier/wallet-core",
   "version": "0.0.1",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
@@ -51,12 +51,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/evefrontier/signer-core.git"
+    "url": "git+https://github.com/evefrontier/wallet-core.git"
   },
   "bugs": {
-    "url": "https://github.com/evefrontier/signer-core/issues"
+    "url": "https://github.com/evefrontier/wallet-core/issues"
   },
-  "homepage": "https://github.com/evefrontier/signer-core/tree/main#readme",
+  "homepage": "https://github.com/evefrontier/wallet-core/tree/main#readme",
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
     "overrides": {

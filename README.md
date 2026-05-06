@@ -1,4 +1,4 @@
-# signer-core
+# wallet-core
 
 Core signing utilities for Eve Frontier wallets.
 
@@ -18,24 +18,24 @@ This package is published as TypeScript source files. Consumers should use a Typ
 Install from npm (when published):
 
 ```bash
-npm install @evefrontier/signer-core
+npm install @evefrontier/wallet-core
 ```
 
 Or with pnpm:
 
 ```bash
-pnpm add @evefrontier/signer-core
+pnpm add @evefrontier/wallet-core
 ```
 
 ## API Surface
 
 Supported package subpath exports:
 
-- @evefrontier/signer-core/crypto
-- @evefrontier/signer-core/definitions
-- @evefrontier/signer-core/types
-- @evefrontier/signer-core/utils
-- @evefrontier/signer-core/wallet-standard-extensions
+- @evefrontier/wallet-core/crypto
+- @evefrontier/wallet-core/definitions
+- @evefrontier/wallet-core/types
+- @evefrontier/wallet-core/utils
+- @evefrontier/wallet-core/wallet-standard-extensions
 
 ## Usage
 
@@ -44,8 +44,8 @@ Supported package subpath exports:
 Example imports:
 
 ```ts
-import { ZKEd25519Keypair } from '@evefrontier/signer-core/crypto'
-import { SponsoredTransactionActions } from '@evefrontier/signer-core/definitions'
+import { ZKEd25519Keypair } from '@evefrontier/wallet-core/crypto'
+import { SponsoredTransactionActions } from '@evefrontier/wallet-core/definitions'
 ```
 
 Keypair signers available are:
@@ -152,7 +152,7 @@ pnpm pack
 Install that tarball into another project:
 
 ```bash
-pnpm add /absolute/path/to/evefrontier-signer-core-0.0.1.tgz
+pnpm add /absolute/path/to/evefrontier-wallet-core-0.0.1.tgz
 ```
 
 If needed, validate consumption in the consumer project with TypeScript:
