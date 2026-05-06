@@ -23,7 +23,6 @@ export default defineConfig({
       {
         test: {
           include: [
-            'tests/unit/**/*.{test,spec}.ts',
             'tests/**/*.unit.{test,spec}.ts',
           ],
           name: 'unit',
@@ -33,8 +32,8 @@ export default defineConfig({
       {
         test: {
           include: [
-            'tests/browser/**/*.{test,spec}.ts',
             'tests/**/*.browser.{test,spec}.ts',
+            'tests/**/*.unit.{test,spec}.ts',
           ],
           name: 'browser',
           browser: {
