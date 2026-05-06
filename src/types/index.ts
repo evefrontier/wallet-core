@@ -1,0 +1,22 @@
+import type { getZkLoginSignature } from '@mysten/sui/zklogin'
+
+/**
+ * A partial ZKLogin Signature.
+ */
+export type PartialZkLoginSignature = Omit<
+  Parameters<typeof getZkLoginSignature>['0']['inputs'],
+  'addressSeed'
+>
+
+export interface ZKProofData {
+  maxEpoch: number
+  partialZkLoginSignature?: PartialZkLoginSignature
+  userSalt: string
+  tokenClaimSub: string
+  tokenClaimAud: string
+}
+
+export interface ZKEd25519KeypairData {
+  secretKey: Uint8Array | string
+  zkProofData: ZKProofData
+}
