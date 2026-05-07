@@ -29,7 +29,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
-          cache: 'bun'
 
       - name: Install Dependencies
         run: bun install
