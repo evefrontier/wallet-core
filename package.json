@@ -47,7 +47,8 @@
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "test": "vitest run",
-    "test:coverage": "vitest run --config vitest.config.ts --coverage"
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -57,13 +58,11 @@
     "url": "https://github.com/evefrontier/wallet-core/issues"
   },
   "homepage": "https://github.com/evefrontier/wallet-core/tree/main#readme",
-  "packageManager": "pnpm@10.33.0",
-  "pnpm": {
-    "overrides": {
-      "axios": "^1.15.0",
-      "lodash": ">=4.18.0",
-      "protobufjs": ">=7.5.5"
-    }
+  "packageManager": "bun@1.3.1",
+  "overrides": {
+    "axios": "^1.15.0",
+    "lodash": ">=4.18.0",
+    "protobufjs": ">=7.5.5"
   },
   "engines": {
     "node": ">=22"
@@ -71,6 +70,7 @@
   "dependencies": {
     "@mysten/signers": "^1.0.2",
     "@mysten/sui": "^2.16.0",
-    "@mysten/wallet-standard": "^0.20.1"
+    "@mysten/wallet-standard": "^0.20.1",
+    "husky": "^9.1.7"
   }
 }

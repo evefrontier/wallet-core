@@ -9,7 +9,7 @@ Early version. APIs may evolve as wallet and zkLogin based signing requirements 
 ## Requirements
 
 - Node.js 22 or newer
-- pnpm 10.33.0 (project package manager)
+- bun 1.3.1 (project package manager)
 
 This package is published as TypeScript source files. Consumers should use a TypeScript-aware toolchain (for example Vite, Next.js, tsx, or another bundler/compiler that handles TypeScript source imports).
 
@@ -21,10 +21,10 @@ Install from npm (when published):
 npm install @evefrontier/wallet-core
 ```
 
-Or with pnpm:
+Or with bun:
 
 ```bash
-pnpm add @evefrontier/wallet-core
+bun add @evefrontier/wallet-core
 ```
 
 ## API Surface
@@ -127,16 +127,16 @@ const { signature, bytes } =
 Setup:
 
 ```bash
-pnpm install
-pnpm exec playwright install
+ install
+ bunx playwright install --with-deps chromium
 ```
 
 Run checks:
 
 ```bash
-pnpm run build
-pnpm run lint
-pnpm run test
+ run build
+ run lint
+ run test
 ```
 
 ## Packaging
@@ -144,15 +144,15 @@ pnpm run test
 Create a local package tarball:
 
 ```bash
-pnpm install
-pnpm run build
-pnpm pack
+ install
+ run build
+ pack
 ```
 
 Install that tarball into another project:
 
 ```bash
-pnpm add /absolute/path/to/evefrontier-wallet-core-0.0.1.tgz
+ add /absolute/path/to/evefrontier-wallet-core-0.0.1.tgz
 ```
 
 If needed, validate consumption in the consumer project with TypeScript:
