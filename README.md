@@ -127,7 +127,7 @@ const { signature, bytes } =
 Setup:
 
 ```bash
- install
+ bun install
  bunx playwright install --with-deps chromium
 ```
 
