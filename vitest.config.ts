@@ -23,16 +23,24 @@ export default defineConfig({
       {
         test: {
           include: ['tests/**/*.unit.{test,spec}.ts'],
-          name: 'unit',
+          name: 'unit-node',
           environment: 'node',
         },
       },
       {
         test: {
-          include: [
-            'tests/**/*.browser.{test,spec}.ts',
-            'tests/**/*.unit.{test,spec}.ts',
-          ],
+          include: ['tests/**/*.unit.{test,spec}.ts'],
+          name: 'unit-browser',
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+      {
+        test: {
+          include: ['tests/**/*.browser.{test,spec}.ts'],
           name: 'browser',
           browser: {
             enabled: true,
