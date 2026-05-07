@@ -9,7 +9,7 @@ Early version. APIs may evolve as wallet and zkLogin based signing requirements 
 ## Requirements
 
 - Node.js 22 or newer
-- bun 1.3.1 (project package manager)
+- bun 1.3.13 (project package manager)
 
 This package is published as TypeScript source files. Consumers should use a TypeScript-aware toolchain (for example Vite, Next.js, tsx, or another bundler/compiler that handles TypeScript source imports).
 
@@ -134,9 +134,9 @@ Setup:
 Run checks:
 
 ```bash
- run build
- run lint
- run test
+bun run build
+bun run lint
+bun run test
 ```
 
 ## Packaging
@@ -144,15 +144,15 @@ Run checks:
 Create a local package tarball:
 
 ```bash
- install
- run build
- pack
+bun install
+bun run build
+bun pack
 ```
 
 Install that tarball into another project:
 
 ```bash
- add /absolute/path/to/evefrontier-wallet-core-0.0.1.tgz
+bun add /absolute/path/to/evefrontier-wallet-core-0.0.1.tgz
 ```
 
 If needed, validate consumption in the consumer project with TypeScript:
