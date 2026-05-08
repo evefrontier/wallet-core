@@ -146,7 +146,7 @@ Create a local package tarball:
 ```bash
 bun install
 bun run build
-bun pack
+bun pm pack
 ```
 
 Install that tarball into another project:
