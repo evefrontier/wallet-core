@@ -48,7 +48,7 @@
     "lint:fix": "biome check --write",
     "test": "vitest run",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
-    "prepare": "husky"
+    "prepare": "./node_modules/.bin/husky"
   },
   "repository": {
     "type": "git",
