@@ -6,11 +6,56 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    "./crypto": "./src/crypto/index.ts",
-    "./definitions": "./src/definitions/index.ts",
-    "./types": "./src/types/index.ts",
-    "./utils": "./src/utils/index.ts",
-    "./wallet-standard-extensions": "./src/wallet-standard-extensions/index.ts"
+    "./crypto": {
+      "import": {
+        "types": "./dist/crypto/index.d.mts",
+        "default": "./dist/crypto/index.mjs"
+      },
+      "require": {
+        "types": "./dist/crypto/index.d.cts",
+        "default": "./dist/crypto/index.cjs"
+      }
+    },
+    "./definitions": {
+      "import": {
+        "types": "./dist/definitions/index.d.mts",
+        "default": "./dist/definitions/index.mjs"
+      },
+      "require": {
+        "types": "./dist/definitions/index.d.cts",
+        "default": "./dist/definitions/index.cjs"
+      }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types/index.d.mts",
+        "default": "./dist/types/index.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/types/index.cjs"
+      }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/utils/index.d.mts",
+        "default": "./dist/utils/index.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/index.d.cts",
+        "default": "./dist/utils/index.cjs"
+      }
+    },
+    "./wallet-standard-extensions": {
+      "import": {
+        "types": "./dist/wallet-standard-extensions/index.d.mts",
+        "default": "./dist/wallet-standard-extensions/index.mjs"
+      },
+      "require": {
+        "types": "./dist/wallet-standard-extensions/index.d.cts",
+        "default": "./dist/wallet-standard-extensions/index.cjs"
+      }
+    }
   },
   "imports": {
     "#src/*": [
@@ -27,23 +72,24 @@
   "files": [
     "LICENSE",
     "README.md",
-    "src/crypto",
-    "src/definitions",
-    "src/types",
-    "src/utils",
-    "src/wallet-standard-extensions"
+    "dist",
+    "src"
   ],
   "devDependencies": {
-    "@biomejs/biome": "2.4.13",
-    "@vitest/browser-playwright": "^4.1.5",
-    "@vitest/coverage-v8": "^4.1.5",
-    "playwright": "^1.59.1",
+    "@biomejs/biome": "2.4.15",
+    "@vitest/browser-playwright": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.6",
+    "husky": "^9.1.7",
+    "playwright": "^1.60.0",
+    "tsdown": "^0.22.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
   "scripts": {
-    "clean": "rm -rf tsconfig.tsbuildinfo",
-    "build": "tsc --noEmit",
+    "clean": "rm -rf ./dist",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "pack": "bun run build && bun pm pack",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "test": "vitest run",
@@ -68,9 +114,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@mysten/signers": "^1.0.2",
-    "@mysten/sui": "^2.16.0",
-    "@mysten/wallet-standard": "^0.20.1",
-    "husky": "^9.1.7"
+    "@mysten/signers": "^1.0.5",
+    "@mysten/sui": "^2.16.3",
+    "@mysten/wallet-standard": "^0.20.3"
   }
 }
