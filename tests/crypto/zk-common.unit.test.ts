@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { isPartialZKLoginSignature, ZKProofHandler } from '#src/crypto'
 import type { PartialZkLoginSignature } from '#src/types'
-import { zkpdBase } from '#tests/crypto/zk-proof-data'
+import {
+  zkpdBase,
+  zkpdBaseWithoutPartialSignature,
+} from '#tests/crypto/zk-proof-data'
 
 describe('isPartialZKLoginSignature', () => {
   const signature = {
@@ -112,35 +115,42 @@ describe('ZKProofHandler', () => {
           { skipValidation: true },
         ),
       ).not.toThrow()
-      expect(sut.partialZkLoginSignature).not.toHaveProperty('addressSeed')
-      expect(sut.maxEpoch).toBe(-1)
-      expect(sut.userSalt).toBe('')
-      expect(sut.tokenClaimSub).toBe('')
-      expect(sut.tokenClaimAud).toBe('')
-      expect(sut.partialZkLoginSignature).toHaveProperty('proofPoints')
-      expect(sut.partialZkLoginSignature).toHaveProperty('issBase64Details')
-      expect(sut.partialZkLoginSignature).toHaveProperty('headerBase64')
+      const sutProofData = sut.getProofData()
+      expect(sutProofData.partialZkLoginSignature).not.toHaveProperty(
+        'addressSeed',
+      )
+      expect(sutProofData.maxEpoch).toBe(-1)
+      expect(sutProofData.userSalt).toBe('')
+      expect(sutProofData.tokenClaimSub).toBe('')
+      expect(sutProofData.tokenClaimAud).toBe('')
+      expect(sutProofData.partialZkLoginSignature).toHaveProperty('proofPoints')
+      expect(sutProofData.partialZkLoginSignature).toHaveProperty(
+        'issBase64Details',
+      )
+      expect(sutProofData.partialZkLoginSignature).toHaveProperty(
+        'headerBase64',
+      )
     })
     it('should not throw if skipValidation is true, even if the input is missing the partial signature', () => {
       const sut = new ZKProofHandler()
       expect(() =>
         sut.applyZKProof(
           {
-            ...zkpdBase,
+            ...zkpdBaseWithoutPartialSignature,
             maxEpoch: -1,
             userSalt: '',
             tokenClaimSub: '',
             tokenClaimAud: '',
-            partialZkLoginSignature: undefined,
           },
           { skipValidation: true },
         ),
       ).not.toThrow()
-      expect(sut.partialZkLoginSignature).toBeUndefined()
-      expect(sut.maxEpoch).toBe(-1)
-      expect(sut.userSalt).toBe('')
-      expect(sut.tokenClaimSub).toBe('')
-      expect(sut.tokenClaimAud).toBe('')
+      const sutProofData = sut.getProofData()
+      expect(sutProofData.partialZkLoginSignature).toBeUndefined()
+      expect(sutProofData.maxEpoch).toBe(-1)
+      expect(sutProofData.userSalt).toBe('')
+      expect(sutProofData.tokenClaimSub).toBe('')
+      expect(sutProofData.tokenClaimAud).toBe('')
     })
   })
 })

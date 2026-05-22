@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   Uint8ArrayFromBase64,
   Uint8ArrayFromHex,
-} from '#tests/test-utils/index.ts'
+} from '#tests/test-utils/index'
 
 describe('Uint8ArrayFromBase64', () => {
   it('should convert base64 string to Uint8Array correctly', () => {

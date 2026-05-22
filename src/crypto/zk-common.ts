@@ -142,28 +142,23 @@ export function isPartialZKLoginSignature(
   )
 }
 
-export class ZKProofHandler implements ZKProofData {
-  // proof data members
-  maxEpoch: number = 0
-  partialZkLoginSignature?: PartialZkLoginSignature = undefined
-  userSalt: string = ''
-  tokenClaimSub: string = ''
-  tokenClaimAud: string = ''
+export class ZKProofHandler {
+  // proof data
+  #data: ZKProofData = {
+    maxEpoch: 0,
+    userSalt: '',
+    tokenClaimSub: '',
+    tokenClaimAud: '',
+  }
   // runtime state members
-  addressSeed: string = ''
+  #addressSeed: string = ''
 
   /**
    * Returns the zk proof data currently in use
    * @returns {ZKProofData} the proof data in use
    */
   getProofData(): ZKProofData {
-    return {
-      maxEpoch: this.maxEpoch,
-      partialZkLoginSignature: this.partialZkLoginSignature,
-      userSalt: this.userSalt,
-      tokenClaimSub: this.tokenClaimSub,
-      tokenClaimAud: this.tokenClaimAud,
-    }
+    return { ...this.#data }
   }
 
   /**
@@ -171,7 +166,7 @@ export class ZKProofHandler implements ZKProofData {
    * @returns {string} the current address seed
    */
   getAddressSeed(): string {
-    return this.addressSeed
+    return this.#addressSeed
   }
 
   /**
@@ -212,19 +207,16 @@ export class ZKProofHandler implements ZKProofData {
       throwIfNotStringOrEmpty(zkpd.tokenClaimSub, 'tokenClaimSub')
       throwIfNotStringOrEmpty(zkpd.tokenClaimAud, 'tokenClaimAud')
     }
-    this.maxEpoch = zkpd.maxEpoch
-    this.userSalt = zkpd.userSalt
-    this.tokenClaimSub = zkpd.tokenClaimSub
-    this.tokenClaimAud = zkpd.tokenClaimAud
+    this.#data = { ...zkpd }
     this.setAddressSeed()
     // Setting this last as it is either set or undefined and is a good
     // candidate to know if the proof has been applied
-    this.partialZkLoginSignature = zkpd.partialZkLoginSignature
-    if (this.partialZkLoginSignature) {
-      if ('addressSeed' in this.partialZkLoginSignature) {
-        delete this.partialZkLoginSignature.addressSeed
+    if (this.#data.partialZkLoginSignature) {
+      if ('addressSeed' in this.#data.partialZkLoginSignature) {
+        delete this.#data.partialZkLoginSignature.addressSeed
       }
     }
+
     return this.getProofData()
   }
 
@@ -233,11 +225,11 @@ export class ZKProofHandler implements ZKProofData {
    * This is called when new proof data is applied.
    */
   protected setAddressSeed(): void {
-    this.addressSeed = genAddressSeed(
-      BigInt(this.userSalt as string),
+    this.#addressSeed = genAddressSeed(
+      BigInt(this.#data.userSalt as string),
       'sub',
-      this.tokenClaimSub as string,
-      this.tokenClaimAud as string,
+      this.#data.tokenClaimSub as string,
+      this.#data.tokenClaimAud as string,
     ).toString()
   }
 
@@ -259,15 +251,15 @@ export class ZKProofHandler implements ZKProofData {
    */
   processSignature(signatureWithBytes: SignatureWithBytes): SignatureWithBytes {
     const { signature, bytes } = signatureWithBytes
-    if (this.partialZkLoginSignature === undefined) {
+    if (this.#data.partialZkLoginSignature === undefined) {
       return { signature, bytes }
     }
     const zkSignature = getZkLoginSignature({
       inputs: {
-        ...this.partialZkLoginSignature,
-        addressSeed: this.addressSeed,
+        ...this.#data.partialZkLoginSignature,
+        addressSeed: this.#addressSeed,
       },
-      maxEpoch: this.maxEpoch,
+      maxEpoch: this.#data.maxEpoch,
       userSignature: signature,
     })
     return { signature: zkSignature, bytes }
