@@ -1,6 +1,6 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha.1",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
@@ -95,6 +95,9 @@
     "test": "vitest run",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "prepare": "./node_modules/.bin/husky"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "repository": {
     "type": "git",
