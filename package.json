@@ -72,8 +72,7 @@
   "files": [
     "LICENSE",
     "README.md",
-    "dist",
-    "src"
+    "dist"
   ],
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
