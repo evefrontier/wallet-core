@@ -10,7 +10,5 @@ export default defineConfig({
       'src/wallet-standard-extensions/index.ts',
   },
   format: ['esm', 'cjs'],
-  dts: true,
-  sourcemap: true,
   clean: true,
 })
