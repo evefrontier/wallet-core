@@ -1,4 +1,5 @@
-// From @evefrontier/dapp-kit
+// Imported by @evefrontier/dapp-kit
+
 export enum SponsoredTransactionActions {
   BRING_ONLINE = 'online',
   BRING_OFFLINE = 'offline',
@@ -12,8 +13,7 @@ export enum Assemblies {
   SmartTurret = 'SmartTurret',
   SmartGate = 'SmartGate',
   NetworkNode = 'NetworkNode',
-  Manufacturing = 'Manufacturing',
-  Refinery = 'Refinery',
+  Assembly = 'Assembly',
 }
 
 export const ASSEMBLY_TYPE_API_STRING: Record<Assemblies, string> = {
@@ -21,8 +21,7 @@ export const ASSEMBLY_TYPE_API_STRING: Record<Assemblies, string> = {
   [Assemblies.SmartTurret]: 'turrets',
   [Assemblies.SmartGate]: 'gates',
   [Assemblies.NetworkNode]: 'network-nodes',
-  [Assemblies.Manufacturing]: 'manufacturing',
-  [Assemblies.Refinery]: 'refineries',
+  [Assemblies.Assembly]: 'assemblies',
 } as const
 
 export type SponsoredTransactionAssemblyType =
