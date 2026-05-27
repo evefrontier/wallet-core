@@ -1,3 +1,5 @@
+// Imported by @evefrontier/dapp-kit
+
 export enum SponsoredTransactionActions {
   BRING_ONLINE = 'online',
   BRING_OFFLINE = 'offline',
