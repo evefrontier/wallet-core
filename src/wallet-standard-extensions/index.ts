@@ -12,7 +12,7 @@ export interface SponsoredTransactionMetadata {
 
 export type SponsoredTransactionInput = {
   txAction: string
-  assembly: string
+  assembly: number
   assemblyType: string
   metadata?: SponsoredTransactionMetadata
 }
