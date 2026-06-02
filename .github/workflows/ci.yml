@@ -6,25 +6,28 @@ on:
       - 'main'
   pull_request:
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      pull-requests: write
 
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
 
@@ -40,17 +43,62 @@ jobs:
       - name: Test
         run: bun run test:coverage
 
-      - name: Report Coverage
-        if: always()
-        uses: davelosert/vitest-coverage-report-action@v2
+      - name: Build coverage summary
+        if: ${{ always() && github.event_name == 'pull_request' && hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          node --input-type=module <<'EOF'
+          import {
+            appendFileSync,
+            mkdirSync,
+            readFileSync,
+            writeFileSync,
+          } from 'node:fs'
+
+          const summaryPath = 'coverage/coverage-summary.json'
+          const summary = JSON.parse(readFileSync(summaryPath, 'utf8'))
+          const total = summary.total
+
+          const formatMetric = (metric) => {
+            const percentage = Number(metric.pct).toFixed(2)
+            return `| ${percentage}% | ${metric.covered} | ${metric.total} | ${metric.skipped} |`
+          }
+
+          const body = [
+            '<!-- wallet-core-coverage-report -->',
+            '## Coverage Report',
+            '',
+            '| Metric | Coverage | Covered | Total | Skipped |',
+            '| --- | ---: | ---: | ---: | ---: |',
+            `| Statements ${formatMetric(total.statements)}`,
+            `| Branches ${formatMetric(total.branches)}`,
+            `| Functions ${formatMetric(total.functions)}`,
+            `| Lines ${formatMetric(total.lines)}`,
+          ].join('\n')
+
+          mkdirSync('coverage-report', { recursive: true })
+          writeFileSync('coverage-report/comment.md', `${body}\n`)
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${body}\n`)
+          EOF
+
+      - name: Upload coverage
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: 'wallet-core'
-          json-summary-path: './coverage/coverage-summary.json'
-          json-final-path: './coverage/coverage-final.json'
-          vite-config-path: './vitest.config.ts'
+          name: wallet-core-coverage
+          path: |
+            coverage-report/comment.md
+            coverage/coverage-summary.json
+            coverage/coverage-final.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   commitlint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: wagoid/commitlint-github-action@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
