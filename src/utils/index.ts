@@ -1,3 +1,6 @@
+import { TENANT_CONFIG, type TenantId } from '../definitions'
+import type { TenantConfig } from '../types'
+
 /**
  * Checks if `obj` has a property named `property` of type `type`
  * @param obj {object}
@@ -59,3 +62,12 @@ export function is3x2ArrayOfStrings(obj: unknown): boolean {
     )
   )
 }
+
+/** EVE token package ID per tenant (derived from TENANT_CONFIG).
+ * @category Constants
+ */
+export const EVE_PACKAGE_ID_BY_TENANT = Object.fromEntries(
+  (Object.entries(TENANT_CONFIG) as [TenantId, TenantConfig][]).map(
+    ([id, config]) => [id, config.evePackageId],
+  ),
+) as Record<TenantId, string>
