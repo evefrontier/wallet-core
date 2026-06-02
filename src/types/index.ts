@@ -20,3 +20,19 @@ export interface ZKEd25519KeypairData {
   secretKey: Uint8Array | string
   zkProofData: ZKProofData
 }
+
+/** Tenant IDs.
+ *  @category Constants
+ */
+export declare enum TenantId {
+  STILLNESS = 'stillness',
+  UTOPIA = 'utopia',
+  TAUCETI = 'tauceti',
+  TIAKI = 'tiaki',
+  TETRA = 'tetra',
+  TESSERACT = 'tesseract',
+}
+/** Tenant when not provided via URL ?tenant= (e.g. dev/default chain).
+ *  @category Constants
+ */
+export declare const DEFAULT_TENANT = TenantId.STILLNESS
