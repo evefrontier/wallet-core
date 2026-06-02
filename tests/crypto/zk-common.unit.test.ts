@@ -41,6 +41,27 @@ describe('isPartialZKLoginSignature', () => {
   it('should detect the shape of a partial ZK Login signature', () => {
     expect(isPartialZKLoginSignature(signature)).toBe(true)
   })
+
+  it('should reject malformed partial ZK Login signatures', () => {
+    const malformedSignatures = [
+      null,
+      {},
+      { ...signature, proofPoints: null },
+      { ...signature, issBase64Details: null },
+      { ...signature, headerBase64: 1 },
+      {
+        ...signature,
+        proofPoints: {
+          ...signature.proofPoints,
+          b: [['0', '0']],
+        },
+      },
+    ]
+
+    for (const malformedSignature of malformedSignatures) {
+      expect(isPartialZKLoginSignature(malformedSignature)).toBe(false)
+    }
+  })
 })
 
 describe('ZKProofHandler', () => {

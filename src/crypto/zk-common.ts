@@ -19,6 +19,80 @@ type IntentSigner = {
   ): Promise<SignatureWithBytes>
 }
 
+// Supporting definitions for isPartialZKLoginSignature
+// This is for establishing that the expected properties are present.
+const PARTIAL_ZK_LOGIN_SIGNATURE_FIELDS = [
+  'proofPoints',
+  'issBase64Details',
+  'headerBase64',
+] as const
+
+// Used to establish that the 'issBase64Details' property has the expected shape and types.
+const ISS_BASE64_DETAILS_FIELDS = [
+  ['value', 'string'],
+  ['indexMod4', 'number'],
+] as const
+
+// Used to establish that the 'proofPoints' property has the expected shape and type.
+const PROOF_POINTS_ARRAY_FIELDS = [
+  ['a', 'string'],
+  ['b', 'object'],
+  ['c', 'string'],
+] as const
+
+// Helper to check that we have an object and narrows to Record<string, unknown>.
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+// Helper to check that we have the expected properties.
+function hasPartialZKLoginSignatureFields(
+  value: Record<string, unknown>,
+): boolean {
+  return PARTIAL_ZK_LOGIN_SIGNATURE_FIELDS.every((field) => field in value)
+}
+
+// Helper to check that the 'issBase64Details' property has the expected shape and type.
+function isIssBase64Details(value: unknown): boolean {
+  return (
+    isObjectRecord(value) &&
+    ISS_BASE64_DETAILS_FIELDS.every(([property, type]) =>
+      hasTypedProperty(value, property, type),
+    )
+  )
+}
+
+// Helper to check that the 'proofPoints' property has the expected shape and type.
+function isProofPoints(value: unknown): boolean {
+  return (
+    isObjectRecord(value) &&
+    PROOF_POINTS_ARRAY_FIELDS.every(([property, type]) =>
+      hasTypedArrayPropertyWithLength(value, property, type, 3),
+    ) &&
+    is3x2ArrayOfStrings(value.b)
+  )
+}
+
+/**
+ * Checks if `obj` is a PartialZkLoginSignature
+ * @param obj {unknown}
+ * @returns true if `obj` includes properties with the same types found in
+ * a PartialZkLoginSignature
+ */
+export function isPartialZKLoginSignature(
+  obj: unknown,
+): obj is PartialZkLoginSignature {
+  if (!isObjectRecord(obj) || !hasPartialZKLoginSignatureFields(obj)) {
+    return false
+  }
+
+  return (
+    isProofPoints(obj.proofPoints) &&
+    isIssBase64Details(obj.issBase64Details) &&
+    typeof obj.headerBase64 === 'string'
+  )
+}
+
 type ZKProofHandling = {
   zkProofHandler: ZKProofHandler
 
@@ -91,55 +165,6 @@ export function withZKProofHandling<TBase extends Constructor<IntentSigner>>(
   return WithZKProofHandling as unknown as abstract new (
     ...args: ConstructorParameters<TBase>
   ) => InstanceType<TBase> & ZKProofHandling
-}
-
-/**
- * Checks if `obj` is a PartialZkLoginSignature
- * @param obj {unknown}
- * @returns true if `obj` includes properties with the same types found in
- * a PartialZkLoginSignature
- */
-export function isPartialZKLoginSignature(
-  obj: unknown,
-): obj is PartialZkLoginSignature {
-  return (
-    typeof obj === 'object' &&
-    obj != null &&
-    'proofPoints' in obj &&
-    'issBase64Details' in obj &&
-    'headerBase64' in obj &&
-    ((partial: PartialZkLoginSignature): partial is PartialZkLoginSignature => {
-      return (
-        typeof partial.proofPoints === 'object' &&
-        typeof partial.issBase64Details === 'object' &&
-        typeof partial.headerBase64 === 'string' &&
-        // issBase64Details
-        hasTypedProperty(partial.issBase64Details, 'value', 'string') &&
-        hasTypedProperty(partial.issBase64Details, 'indexMod4', 'number') &&
-        // proofPoints
-        hasTypedArrayPropertyWithLength(
-          partial.proofPoints,
-          'a',
-          'string',
-          3,
-        ) &&
-        hasTypedArrayPropertyWithLength(
-          partial.proofPoints,
-          'b',
-          'object',
-          3,
-        ) &&
-        hasTypedArrayPropertyWithLength(
-          partial.proofPoints,
-          'c',
-          'string',
-          3,
-        ) &&
-        // b is a 3x2 array of strings
-        is3x2ArrayOfStrings(partial.proofPoints.b)
-      )
-    })(obj as PartialZkLoginSignature)
-  )
 }
 
 export class ZKProofHandler {
