@@ -110,7 +110,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: wallet-core-coverage
-          path: coverage
+          path: .
 
       - name: Report Coverage
         if: ${{ steps.download-coverage.outcome == 'success' }}
@@ -121,11 +121,18 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           node --input-type=module <<'EOF'
-          import { readFileSync } from 'node:fs'
+          import { existsSync, readFileSync } from 'node:fs'
 
           const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/')
           const issueNumber = Number(process.env.PR_NUMBER)
-          const body = readFileSync('coverage/comment.md', 'utf8').trim()
+          const commentPath = 'coverage-report/comment.md'
+
+          if (!existsSync(commentPath)) {
+            console.log(`Coverage comment not found at ${commentPath}`)
+            process.exit(0)
+          }
+
+          const body = readFileSync(commentPath, 'utf8').trim()
           const marker = '<!-- wallet-core-coverage-report -->'
 
           const request = async (url, init = {}) => {
