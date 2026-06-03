@@ -1,4 +1,4 @@
-import { WebCryptoSigner } from '@mysten/signers/webcrypto'
+import { WebCryptoSigner } from '@mysten/webcrypto-signer'
 import { withZKProofHandling } from './zk-common'
 
 const ZKWebCryptoSignerBase = withZKProofHandling(WebCryptoSigner)

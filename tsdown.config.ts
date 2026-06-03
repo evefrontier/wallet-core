@@ -9,6 +9,6 @@ export default defineConfig({
     'wallet-standard-extensions/index':
       'src/wallet-standard-extensions/index.ts',
   },
-  format: ['esm', 'cjs'],
+  format: ['esm'],
   clean: true,
 })
