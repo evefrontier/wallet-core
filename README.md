@@ -127,8 +127,9 @@ const { signature, bytes } =
 Setup:
 
 ```bash
- bun install
- bunx playwright install --with-deps chromium
+nvm use
+bun install
+bunx playwright install --with-deps chromium
 ```
 
 Run checks:
@@ -137,7 +138,10 @@ Run checks:
 bun run build
 bun run lint
 bun run test
+bun run test:coverage
 ```
+
+`bun run test` runs the full Vitest suite, including browser projects, in headless mode. Use `bun run test:node` for the Node-only project and `bun run test:browser` for the browser projects.
 
 ## Packaging
 
