@@ -2,9 +2,12 @@ import type { IntentScope, SignatureWithBytes } from '@mysten/sui/cryptography'
 import { genAddressSeed, getZkLoginSignature } from '@mysten/sui/zklogin'
 import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
-  hasTypedArrayPropertyWithLength,
-  hasTypedProperty,
   is3x2ArrayOfStrings,
+  isNonEmptyString,
+  isNonNegativeBigIntString,
+  isPositiveSafeInteger,
+  isStringArrayWithLength,
+  isUint8Integer,
 } from '#src/utils'
 
 type Constructor<TInstance = object> = abstract new (
@@ -27,18 +30,11 @@ const PARTIAL_ZK_LOGIN_SIGNATURE_FIELDS = [
   'headerBase64',
 ] as const
 
-// Used to establish that the 'issBase64Details' property has the expected shape and types.
-const ISS_BASE64_DETAILS_FIELDS = [
-  ['value', 'string'],
-  ['indexMod4', 'number'],
-] as const
+// Used to establish that the 'issBase64Details' property has the expected shape.
+const ISS_BASE64_DETAILS_FIELDS = ['value', 'indexMod4'] as const
 
-// Used to establish that the 'proofPoints' property has the expected shape and type.
-const PROOF_POINTS_ARRAY_FIELDS = [
-  ['a', 'string'],
-  ['b', 'object'],
-  ['c', 'string'],
-] as const
+// Used to establish that the 'proofPoints' property has the expected shape.
+const PROOF_POINTS_ARRAY_FIELDS = ['a', 'b', 'c'] as const
 
 // Helper to check that we have an object and narrows to Record<string, unknown>.
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -56,9 +52,9 @@ function hasPartialZKLoginSignatureFields(
 function isIssBase64Details(value: unknown): boolean {
   return (
     isObjectRecord(value) &&
-    ISS_BASE64_DETAILS_FIELDS.every(([property, type]) =>
-      hasTypedProperty(value, property, type),
-    )
+    ISS_BASE64_DETAILS_FIELDS.every((property) => property in value) &&
+    typeof value.value === 'string' &&
+    isUint8Integer(value.indexMod4)
   )
 }
 
@@ -66,18 +62,54 @@ function isIssBase64Details(value: unknown): boolean {
 function isProofPoints(value: unknown): boolean {
   return (
     isObjectRecord(value) &&
-    PROOF_POINTS_ARRAY_FIELDS.every(([property, type]) =>
-      hasTypedArrayPropertyWithLength(value, property, type, 3),
-    ) &&
-    is3x2ArrayOfStrings(value.b)
+    PROOF_POINTS_ARRAY_FIELDS.every((property) => property in value) &&
+    isStringArrayWithLength(value.a, 3) &&
+    is3x2ArrayOfStrings(value.b) &&
+    isStringArrayWithLength(value.c, 3)
   )
 }
 
+function clonePartialZkLoginSignature(
+  signature: PartialZkLoginSignature,
+): PartialZkLoginSignature {
+  return {
+    proofPoints: {
+      a: [...signature.proofPoints.a],
+      b: Array.from(signature.proofPoints.b, (row) => Array.from(row)),
+      c: [...signature.proofPoints.c],
+    },
+    issBase64Details: { ...signature.issBase64Details },
+    headerBase64: signature.headerBase64,
+  }
+}
+
+function cloneZKProofData(zkpd: ZKProofData): ZKProofData {
+  return {
+    maxEpoch: zkpd.maxEpoch,
+    userSalt: zkpd.userSalt,
+    tokenClaimSub: zkpd.tokenClaimSub,
+    tokenClaimAud: zkpd.tokenClaimAud,
+    ...(zkpd.partialZkLoginSignature
+      ? {
+          partialZkLoginSignature: clonePartialZkLoginSignature(
+            zkpd.partialZkLoginSignature,
+          ),
+        }
+      : {}),
+  }
+}
+
 /**
- * Checks if `obj` is a PartialZkLoginSignature
+ * Checks whether `obj` has the shape required for zkLogin signature inputs
+ * supplied by the proving service, excluding `addressSeed`.
+ *
+ * This verifies JSON/object shape and primitive field types only. It does not
+ * verify cryptographic proof validity or add undocumented constraints to proof
+ * strings.
+ *
  * @param obj {unknown}
- * @returns true if `obj` includes properties with the same types found in
- * a PartialZkLoginSignature
+ * @returns true if `obj` includes properties with the same shape as a
+ * PartialZkLoginSignature
  */
 export function isPartialZKLoginSignature(
   obj: unknown,
@@ -183,7 +215,7 @@ export class ZKProofHandler {
    * @returns {ZKProofData} the proof data in use
    */
   getProofData(): ZKProofData {
-    return { ...this.#data }
+    return cloneZKProofData(this.#data)
   }
 
   /**
@@ -205,42 +237,33 @@ export class ZKProofHandler {
   ): ZKProofData {
     const skipValidation = options?.skipValidation ?? false
     if (!skipValidation) {
-      const isStringWithContent = (data: unknown): boolean => {
-        return typeof data === 'string' && data.trim().length > 0
-      }
       const throwIfNotStringOrEmpty = (data: unknown, name: string) => {
-        if (!isStringWithContent(data)) {
+        if (!isNonEmptyString(data)) {
           throw new Error(
             `[applyZKProof] expected property "${name}" to be a string with content`,
           )
         }
       }
-      const isNumberGreaterThan = (data: unknown, value: number): boolean => {
-        return typeof data === 'number' && data > value
-      }
-      if (!isNumberGreaterThan(zkpd.maxEpoch, 0)) {
+      if (!isPositiveSafeInteger(zkpd.maxEpoch)) {
         throw new Error(
-          `[applyZKProof] expected property "$maxEpoch" to be a number greater than 0`,
+          `[applyZKProof] expected property "maxEpoch" to be a positive safe integer`,
         )
       }
       if (!isPartialZKLoginSignature(zkpd.partialZkLoginSignature)) {
         throw new Error(
-          `[applyZKProof] expected property "partialZkLoginSignature" in incorrect`,
+          `[applyZKProof] expected property "partialZkLoginSignature" to match zkLogin proof input shape`,
         )
       }
-      throwIfNotStringOrEmpty(zkpd.userSalt, 'userSalt')
+      if (!isNonNegativeBigIntString(zkpd.userSalt)) {
+        throw new Error(
+          `[applyZKProof] expected property "userSalt" to be a non-negative integer string`,
+        )
+      }
       throwIfNotStringOrEmpty(zkpd.tokenClaimSub, 'tokenClaimSub')
       throwIfNotStringOrEmpty(zkpd.tokenClaimAud, 'tokenClaimAud')
     }
-    this.#data = { ...zkpd }
+    this.#data = cloneZKProofData(zkpd)
     this.setAddressSeed()
-    // Setting this last as it is either set or undefined and is a good
-    // candidate to know if the proof has been applied
-    if (this.#data.partialZkLoginSignature) {
-      if ('addressSeed' in this.#data.partialZkLoginSignature) {
-        delete this.#data.partialZkLoginSignature.addressSeed
-      }
-    }
 
     return this.getProofData()
   }
