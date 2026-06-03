@@ -129,9 +129,20 @@ type ZKProofHandling = {
   zkProofHandler: ZKProofHandler
 
   /**
-   * Applies the neccessary data to make this instance capable of performing ZKLogin signing.
-   * @param zkpd {ZKProofData}
+   * Applies proof data that enables ZK Login signing for future signatures.
+   *
+   * The supplied proof data is copied before it is stored. Mutating the input
+   * object after this call does not mutate signer state. The returned proof data
+   * is also a copy.
+   *
+   * By default, this validates proof-data shape and required fields before
+   * storing them. `skipValidation` skips only those explicit checks; the data is
+   * still stored and used to compute the address seed, so malformed values can
+   * still throw during address-seed computation or later signing.
+   *
+   * @param zkpd {ZKProofData} Proof data to apply to the signer.
    * @param options optional object that can have `skipValidation` set in order to skip validation.
+   * @returns {ZKProofData} A copy of the proof data now stored by the signer.
    */
   applyZKProof(
     zkpd: ZKProofData,
@@ -139,8 +150,11 @@ type ZKProofHandling = {
   ): ZKProofData
 
   /**
-   * Returns the zk proof data currently in use
-   * @returns {ZKProofData} the proof data in use
+   * Returns a copy of the zk proof data currently in use.
+   *
+   * Mutating the returned value does not mutate signer state.
+   *
+   * @returns {ZKProofData} A copy of the proof data in use.
    */
   getProofData(): ZKProofData
 
@@ -211,8 +225,11 @@ export class ZKProofHandler {
   #addressSeed: string = ''
 
   /**
-   * Returns the zk proof data currently in use
-   * @returns {ZKProofData} the proof data in use
+   * Returns a copy of the zk proof data currently in use.
+   *
+   * Mutating the returned value does not mutate handler state.
+   *
+   * @returns {ZKProofData} A copy of the proof data in use.
    */
   getProofData(): ZKProofData {
     return cloneZKProofData(this.#data)
@@ -227,9 +244,26 @@ export class ZKProofHandler {
   }
 
   /**
-   * Applies the neccessary data to make this instance capable of performing ZKLogin signing.
-   * @param zkpd {ZKProofData}
+   * Applies proof data that enables ZK Login signing for future signatures.
+   *
+   * The supplied proof data is copied before it is stored. Mutating the input
+   * object after this call does not mutate handler state. The returned proof
+   * data is also a copy.
+   *
+   * When validation is enabled, this checks that:
+   * - `maxEpoch` is a positive safe integer.
+   * - `partialZkLoginSignature` matches the zkLogin proof input shape,
+   *   excluding `addressSeed`.
+   * - `userSalt` is a non-negative integer string.
+   * - `tokenClaimSub` and `tokenClaimAud` are non-empty strings.
+   *
+   * `skipValidation` skips only those explicit checks. The data is still stored
+   * and used to compute the address seed, so malformed values can still throw
+   * here or later when signing.
+   *
+   * @param zkpd {ZKProofData} Proof data to apply to the handler.
    * @param options optional object that can have `skipValidation` set in order to skip validation.
+   * @returns {ZKProofData} A copy of the proof data now stored by the handler.
    */
   applyZKProof(
     zkpd: ZKProofData,
@@ -296,6 +330,9 @@ export class ZKProofHandler {
    * original signature that includes the proof data, and can be verified in a way
    * that extracts the original signature and checks it against the original bytes.
    * This can be seen in the keypair/signer tests where `parseZkLoginSignature` is used.
+   *
+   * If no partial zkLogin signature is stored, the original signature and bytes
+   * are returned unchanged.
    */
   processSignature(signatureWithBytes: SignatureWithBytes): SignatureWithBytes {
     const { signature, bytes } = signatureWithBytes
