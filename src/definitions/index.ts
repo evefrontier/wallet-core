@@ -1,7 +1,6 @@
 // Imported by @evefrontier/dapp-kit
 
-import type { TenantConfig } from '../types'
-import { EVE_PACKAGE_ID_BY_TENANT } from '../utils'
+import type { TenantConfig } from '#src/types'
 
 export enum SponsoredTransactionActions {
   BRING_ONLINE = 'online',
@@ -91,6 +90,15 @@ export const TENANT_CONFIG: Record<TenantId, TenantConfig> = {
     datahubHost: 'world-api-stillness.live.tech.evefrontier.com',
   },
 }
+
+/** EVE token package ID per tenant (derived from TENANT_CONFIG).
+ * @category Constants
+ */
+export const EVE_PACKAGE_ID_BY_TENANT = Object.fromEntries(
+  (Object.entries(TENANT_CONFIG) as [TenantId, TenantConfig][]).map(
+    ([id, config]) => [id, config.evePackageId],
+  ),
+) as Record<TenantId, string>
 
 export type SponsoredTransactionAssemblyType =
   (typeof ASSEMBLY_TYPE_API_STRING)[Assemblies]
