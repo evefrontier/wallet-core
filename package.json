@@ -91,8 +91,10 @@
     "pack": "bun run build && bun pm pack",
     "lint": "biome check",
     "lint:fix": "biome check --write",
-    "test": "vitest run",
-    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "test": "vitest run --browser.headless",
+    "test:node": "vitest run --project unit-node",
+    "test:browser": "vitest run --project unit-browser --project browser --browser.headless",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage --browser.headless",
     "prepare": "./node_modules/.bin/husky"
   },
   "publishConfig": {
