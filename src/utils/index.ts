@@ -1,56 +1,101 @@
-import { TENANT_CONFIG, type TenantId } from '../definitions'
-import type { TenantConfig } from '../types'
+/**
+ * Checks whether `value` is a string with at least one non-whitespace
+ * character.
+ *
+ * This is useful for fields that must be present and meaningful before they are
+ * passed into APIs such as `BigInt` or address seed generation.
+ *
+ * @param value {unknown}
+ * @returns {boolean} True when `value` is a string and `value.trim()` is not empty.
+ */
+export function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
 
 /**
- * Checks if `obj` has a property named `property` of type `type`
- * @param obj {object}
- * @param property {string}
- * @param type {string}
- * @returns {boolean} Returns true if `obj` has a property named `property` of type `type`
+ * Checks whether `value` is a non-empty string that can be parsed by `BigInt`
+ * and represents a value greater than or equal to zero.
+ *
+ * Decimal, hexadecimal, and other string formats accepted by `BigInt` are
+ * accepted here too.
+ *
+ * @param value {unknown}
+ * @returns {boolean} True when `value` can be parsed as a non-negative bigint.
  */
-export function hasTypedProperty(
-  obj: object,
-  property: string,
-  type: string,
-): boolean {
+export function isNonNegativeBigIntString(value: unknown): value is string {
+  if (!isNonEmptyString(value)) {
+    return false
+  }
+
+  try {
+    return BigInt(value) >= 0n
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Checks whether `value` is a positive JavaScript safe integer.
+ *
+ * This rejects zero, negative numbers, fractional numbers, infinities, `NaN`,
+ * and integers outside `Number.MAX_SAFE_INTEGER`.
+ *
+ * @param value {unknown}
+ * @returns {boolean} True when `value` is an integer greater than zero and safely representable.
+ */
+export function isPositiveSafeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0
+}
+
+/**
+ * Checks whether `value` is an integer in the unsigned 8-bit range.
+ *
+ * This is a type/serialization-shape check for values that are encoded as
+ * `u8`; it does not attach additional domain semantics to the number.
+ *
+ * @param value {unknown}
+ * @returns {boolean} True when `value` is an integer from 0 through 255.
+ */
+export function isUint8Integer(value: unknown): value is number {
   return (
-    property in obj &&
-    typeof (obj as Record<string, unknown>)[property] === type
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 255
   )
 }
 
 /**
- * Checks if `obj` has a property named `property` that is an array of type `type`
- * with the specified `length`
- * @param obj {object}
- * @param property {string}
- * @param type {string}
+ * Checks whether `value` is an array of strings with exactly `length` entries.
+ *
+ * Empty strings are allowed; this helper validates shape and element type, not
+ * string content.
+ *
+ * @param value {unknown}
  * @param length {number}
- * @returns {boolean} Returns true if `obj` has a property named `property` that
- * is an array of type `type` with the specified `length`
+ * @returns {boolean} True when `value` is a string array with exactly `length` entries.
  */
-export function hasTypedArrayPropertyWithLength(
-  obj: object,
-  property: string,
-  type: string,
+export function isStringArrayWithLength(
+  value: unknown,
   length: number,
-): boolean {
+): value is string[] {
   return (
-    property in obj &&
-    Array.isArray((obj as Record<string, unknown>)[property]) &&
-    ((obj as Record<string, unknown>)[property] as unknown[]).every(
-      (item: unknown) => typeof item === type,
-    ) &&
-    ((obj as Record<string, unknown>)[property] as unknown[]).length === length
+    Array.isArray(value) &&
+    value.length === length &&
+    value.every((item) => typeof item === 'string')
   )
 }
 
 /**
- * Checks if `obj` is a 3x2 array of strings
+ * Checks whether `obj` is a 3x2 matrix of strings.
+ *
+ * Empty strings are allowed; this helper validates shape and element type, not
+ * string content.
+ *
  * @param obj {unknown}
- * @returns {boolean} Returns true if `obj` is a 3x2 array of strings
+ * @returns {boolean} True when `obj` is an array with three rows and two string entries per row.
  */
-export function is3x2ArrayOfStrings(obj: unknown): boolean {
+export function is3x2ArrayOfStrings(obj: unknown): obj is string[][] {
   return (
     Array.isArray(obj) &&
     obj.length === 3 &&
@@ -63,11 +108,4 @@ export function is3x2ArrayOfStrings(obj: unknown): boolean {
   )
 }
 
-/** EVE token package ID per tenant (derived from TENANT_CONFIG).
- * @category Constants
- */
-export const EVE_PACKAGE_ID_BY_TENANT = Object.fromEntries(
-  (Object.entries(TENANT_CONFIG) as [TenantId, TenantConfig][]).map(
-    ([id, config]) => [id, config.evePackageId],
-  ),
-) as Record<TenantId, string>
+export { EVE_PACKAGE_ID_BY_TENANT } from '#src/definitions'

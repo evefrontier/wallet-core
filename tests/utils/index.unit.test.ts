@@ -1,44 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
-  hasTypedArrayPropertyWithLength,
-  hasTypedProperty,
   is3x2ArrayOfStrings,
+  isNonEmptyString,
+  isNonNegativeBigIntString,
+  isPositiveSafeInteger,
+  isStringArrayWithLength,
+  isUint8Integer,
 } from '#src/utils'
 
 describe('Utility Functions', () => {
-  describe('hasTypedProperty', () => {
-    it('should return true if object has property of specified type', () => {
-      const obj = { name: 'Alice', age: 30 }
-      expect(hasTypedProperty(obj, 'name', 'string')).toBe(true)
-      expect(hasTypedProperty(obj, 'age', 'number')).toBe(true)
-    })
-
-    it('should return false if object does not have property of specified type', () => {
-      const obj = { name: 'Alice', age: 30 }
-      expect(hasTypedProperty(obj, 'name', 'number')).toBe(false)
-      expect(hasTypedProperty(obj, 'age', 'string')).toBe(false)
-    })
-  })
-
-  describe('hasTypedArrayPropertyWithLength', () => {
-    it('should return true if object has array property of specified type and length', () => {
-      const obj = { numbers: [1, 2, 3] }
-      expect(hasTypedArrayPropertyWithLength(obj, 'numbers', 'number', 3)).toBe(
-        true,
-      )
-    })
-
-    it('should return false if object does not have array property of specified type and length', () => {
-      const obj = { numbers: [1, 2, 3] }
-      expect(hasTypedArrayPropertyWithLength(obj, 'numbers', 'string', 3)).toBe(
-        false,
-      )
-      expect(hasTypedArrayPropertyWithLength(obj, 'numbers', 'number', 2)).toBe(
-        false,
-      )
-    })
-  })
-
   describe('is3x2ArrayOfStrings', () => {
     it('should return true if object is a 3x2 array of strings', () => {
       const arr = [
@@ -61,6 +31,53 @@ describe('Utility Functions', () => {
       ] // a number is not a string
       expect(is3x2ArrayOfStrings(arr1)).toBe(false)
       expect(is3x2ArrayOfStrings(arr2)).toBe(false)
+    })
+  })
+
+  describe('isNonEmptyString', () => {
+    it('should return true only for strings with non-whitespace content', () => {
+      expect(isNonEmptyString('value')).toBe(true)
+      expect(isNonEmptyString('')).toBe(false)
+      expect(isNonEmptyString('   ')).toBe(false)
+      expect(isNonEmptyString(1)).toBe(false)
+    })
+  })
+
+  describe('isNonNegativeBigIntString', () => {
+    it('should return true only for non-negative bigint strings', () => {
+      expect(isNonNegativeBigIntString('0')).toBe(true)
+      expect(isNonNegativeBigIntString('12345678901234567890')).toBe(true)
+      expect(isNonNegativeBigIntString('-1')).toBe(false)
+      expect(isNonNegativeBigIntString('not-a-number')).toBe(false)
+      expect(isNonNegativeBigIntString('')).toBe(false)
+    })
+  })
+
+  describe('isPositiveSafeInteger', () => {
+    it('should return true only for positive safe integers', () => {
+      expect(isPositiveSafeInteger(1)).toBe(true)
+      expect(isPositiveSafeInteger(0)).toBe(false)
+      expect(isPositiveSafeInteger(1.5)).toBe(false)
+      expect(isPositiveSafeInteger(Number.MAX_SAFE_INTEGER + 1)).toBe(false)
+    })
+  })
+
+  describe('isUint8Integer', () => {
+    it('should return true only for integers in the uint8 range', () => {
+      expect(isUint8Integer(0)).toBe(true)
+      expect(isUint8Integer(255)).toBe(true)
+      expect(isUint8Integer(-1)).toBe(false)
+      expect(isUint8Integer(256)).toBe(false)
+      expect(isUint8Integer(1.5)).toBe(false)
+    })
+  })
+
+  describe('isStringArrayWithLength', () => {
+    it('should return true only for string arrays of the given length', () => {
+      expect(isStringArrayWithLength(['', 'a'], 2)).toBe(true)
+      expect(isStringArrayWithLength(['a'], 2)).toBe(false)
+      expect(isStringArrayWithLength(['a', 1], 2)).toBe(false)
+      expect(isStringArrayWithLength('not-array', 2)).toBe(false)
     })
   })
 })
