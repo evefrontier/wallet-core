@@ -7,54 +7,29 @@
   "type": "module",
   "exports": {
     "./crypto": {
-      "import": {
-        "types": "./dist/crypto/index.d.mts",
-        "default": "./dist/crypto/index.mjs"
-      },
-      "require": {
-        "types": "./dist/crypto/index.d.cts",
-        "default": "./dist/crypto/index.cjs"
-      }
+      "types": "./dist/crypto/index.d.mts",
+      "import": "./dist/crypto/index.mjs",
+      "default": "./dist/crypto/index.mjs"
     },
     "./definitions": {
-      "import": {
-        "types": "./dist/definitions/index.d.mts",
-        "default": "./dist/definitions/index.mjs"
-      },
-      "require": {
-        "types": "./dist/definitions/index.d.cts",
-        "default": "./dist/definitions/index.cjs"
-      }
+      "types": "./dist/definitions/index.d.mts",
+      "import": "./dist/definitions/index.mjs",
+      "default": "./dist/definitions/index.mjs"
     },
     "./types": {
-      "import": {
-        "types": "./dist/types/index.d.mts",
-        "default": "./dist/types/index.mjs"
-      },
-      "require": {
-        "types": "./dist/types/index.d.cts",
-        "default": "./dist/types/index.cjs"
-      }
+      "types": "./dist/types/index.d.mts",
+      "import": "./dist/types/index.mjs",
+      "default": "./dist/types/index.mjs"
     },
     "./utils": {
-      "import": {
-        "types": "./dist/utils/index.d.mts",
-        "default": "./dist/utils/index.mjs"
-      },
-      "require": {
-        "types": "./dist/utils/index.d.cts",
-        "default": "./dist/utils/index.cjs"
-      }
+      "types": "./dist/utils/index.d.mts",
+      "import": "./dist/utils/index.mjs",
+      "default": "./dist/utils/index.mjs"
     },
     "./wallet-standard-extensions": {
-      "import": {
-        "types": "./dist/wallet-standard-extensions/index.d.mts",
-        "default": "./dist/wallet-standard-extensions/index.mjs"
-      },
-      "require": {
-        "types": "./dist/wallet-standard-extensions/index.d.cts",
-        "default": "./dist/wallet-standard-extensions/index.cjs"
-      }
+      "types": "./dist/wallet-standard-extensions/index.d.mts",
+      "import": "./dist/wallet-standard-extensions/index.mjs",
+      "default": "./dist/wallet-standard-extensions/index.mjs"
     }
   },
   "imports": {
@@ -109,17 +84,12 @@
   },
   "homepage": "https://github.com/evefrontier/wallet-core/tree/main#readme",
   "packageManager": "bun@1.3.13",
-  "overrides": {
-    "axios": "^1.15.0",
-    "lodash": ">=4.18.0",
-    "protobufjs": ">=7.5.5"
-  },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
-    "@mysten/signers": "^1.0.5",
     "@mysten/sui": "^2.16.3",
+    "@mysten/webcrypto-signer": "^0.1.2",
     "@mysten/wallet-standard": "^0.20.3"
   }
 }

@@ -11,7 +11,7 @@ Early version. APIs may evolve as wallet and zkLogin based signing requirements 
 - Node.js 22 or newer
 - bun 1.3.13 (project package manager)
 
-This package is published as TypeScript source files. Consumers should use a TypeScript-aware toolchain (for example Vite, Next.js, tsx, or another bundler/compiler that handles TypeScript source imports).
+This package publishes ESM-only entrypoints and TypeScript declarations from `dist`.
 
 ## Install
 
@@ -33,7 +33,7 @@ Supported package subpath exports:
 
 - @evefrontier/wallet-core/crypto
 - @evefrontier/wallet-core/definitions
-- @evefrontier/wallet-core/types
+- @evefrontier/wallet-core/types (type-only)
 - @evefrontier/wallet-core/utils
 - @evefrontier/wallet-core/wallet-standard-extensions
 
@@ -46,6 +46,7 @@ Example imports:
 ```ts
 import { ZKEd25519Keypair } from '@evefrontier/wallet-core/crypto'
 import { SponsoredTransactionActions } from '@evefrontier/wallet-core/definitions'
+import type { ZKProofData } from '@evefrontier/wallet-core/types'
 ```
 
 Keypair signers available are:
