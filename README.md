@@ -80,8 +80,29 @@ const publicKey = keypair.getPublicKey()
 
 Then when the partial ZK login signature, salt, max epoch and `sub` and `aud` claims
 from the JWT are available, they can be applied to the keypair classes by using
-`applyZKProof`. This allows the signing to be done as follows. Assuming a standard
-Sui gRPC client.
+`applyZKProof`.
+
+`applyZKProof` switches the signer into ZK Login signing mode for future
+`signWithIntent`, `signTransaction`, and `signPersonalMessage` calls. The
+applied proof data is copied into the signer, and `getProofData()` also returns
+a copy, so mutating the original input or a returned proof-data object does not
+mutate the signer's internal proof state.
+
+By default, `applyZKProof` validates the input shape before storing it:
+
+- `maxEpoch` must be a positive safe integer.
+- `partialZkLoginSignature` must match the zkLogin proof input shape, excluding
+  `addressSeed`.
+- `userSalt` must be a non-negative integer string.
+- `tokenClaimSub` and `tokenClaimAud` must be non-empty strings.
+
+Passing `{ skipValidation: true }` skips only those explicit validation checks.
+The signer still stores the supplied data and computes the address seed, so
+malformed fields can still fail during address-seed computation or later when
+they are used.
+
+If no `partialZkLoginSignature` is stored, signing falls back to the underlying
+keypair or signer and returns a normal Sui signature.
 
 ### Signing a transaction
 
@@ -171,4 +192,3 @@ npx tsc --noEmit
 - Add to ZKProofData maxEpochTimestampMs: number
   evevault has this for refreshing zklogin
   see getCurrentEpochFromRpc getCurrentEpochFromGraphQL for details (in evevault)
-
