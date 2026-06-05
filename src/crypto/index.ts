@@ -1,5 +1,4 @@
-export type { RawSignParams } from './sign-with-intent'
-export { signWithIntent } from './sign-with-intent'
+export { type RawSignParams, signWithIntent } from './sign-with-intent'
 export {
   isPartialZKLoginSignature,
   withZKProofHandling,

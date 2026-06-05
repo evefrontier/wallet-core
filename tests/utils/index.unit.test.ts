@@ -4,6 +4,7 @@ import {
   is3x2ArrayOfStrings,
   isNonEmptyString,
   isNonNegativeBigIntString,
+  isObjectRecord,
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
@@ -41,6 +42,17 @@ describe('Utility Functions', () => {
       expect(isNonEmptyString('')).toBe(false)
       expect(isNonEmptyString('   ')).toBe(false)
       expect(isNonEmptyString(1)).toBe(false)
+    })
+  })
+
+  describe('isObjectRecord', () => {
+    it('should return true only for non-null objects', () => {
+      expect(isObjectRecord({ value: 1 })).toBe(true)
+      expect(isObjectRecord([])).toBe(true)
+      expect(isObjectRecord(null)).toBe(false)
+      expect(isObjectRecord('value')).toBe(false)
+      expect(isObjectRecord(1)).toBe(false)
+      expect(isObjectRecord(() => undefined)).toBe(false)
     })
   })
 

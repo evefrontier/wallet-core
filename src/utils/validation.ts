@@ -13,6 +13,21 @@ export function isNonEmptyString(value: unknown): value is string {
 }
 
 /**
+ * Checks whether `value` is a non-null object and narrows it to a string-keyed
+ * record. Arrays are objects in JavaScript and are accepted by this helper.
+ *
+ * Use this before property existence checks on untrusted JSON-like values.
+ *
+ * @param value {unknown}
+ * @returns {boolean} True when `value` is an object and not null.
+ */
+export function isObjectRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+/**
  * Checks whether `value` is a non-empty string that can be parsed by `BigInt`
  * and represents a value greater than or equal to zero.
  *

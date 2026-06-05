@@ -6,7 +6,6 @@ import {
   getAssemblyTypeApiString,
   getEveCoinType,
   isEveCoinType,
-  LEGACY_EVE_COIN_TYPE,
   TenantId,
 } from '#src/definitions'
 
@@ -50,12 +49,11 @@ describe('definitions', () => {
     )
   })
 
-  it('should identify known current and legacy EVE coin types', () => {
+  it('should identify known current EVE coin types', () => {
     for (const tenantId of Object.values(TenantId)) {
       expect(isEveCoinType(getEveCoinType(tenantId))).toBe(true)
     }
 
-    expect(isEveCoinType(LEGACY_EVE_COIN_TYPE)).toBe(true)
     expect(isEveCoinType('0x2::sui::SUI')).toBe(false)
     expect(isEveCoinType('')).toBe(false)
   })

@@ -5,6 +5,7 @@ import {
   is3x2ArrayOfStrings,
   isNonEmptyString,
   isNonNegativeBigIntString,
+  isObjectRecord,
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
@@ -35,11 +36,6 @@ const ISS_BASE64_DETAILS_FIELDS = ['value', 'indexMod4'] as const
 
 // Used to establish that the 'proofPoints' property has the expected shape.
 const PROOF_POINTS_ARRAY_FIELDS = ['a', 'b', 'c'] as const
-
-// Helper to check that we have an object and narrows to Record<string, unknown>.
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
 
 // Helper to check that we have the expected properties.
 function hasPartialZKLoginSignatureFields(

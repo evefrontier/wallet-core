@@ -1,4 +1,5 @@
 import type { PartialZkLoginSignature } from '#src/types'
+import { isObjectRecord } from '#src/utils/validation'
 import { isPartialZKLoginSignature } from './zk-common'
 import type { ZkProofResponseLike } from './zk-types'
 
@@ -39,8 +40,4 @@ export function getZkProofResponseErrorMessage(
   return typeof zkProof.error === 'string'
     ? zkProof.error
     : (zkProof.error.message ?? 'Failed to get ZK proof')
-}
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
