@@ -121,15 +121,31 @@ describe('ZKProofHandler', () => {
         )
       }
     })
-    it('should throw if userSalt is not a non-negative integer string', () => {
+    it('should throw if userSalt is not an in-range base-10 integer string', () => {
       const sut = new ZKProofHandler()
-      const invalidUserSalts = ['', '-1', 'not-a-number']
+      const invalidUserSalts = [
+        '',
+        '-1',
+        'not-a-number',
+        '0x1',
+        `${2n ** 128n}`,
+      ]
 
       for (const userSalt of invalidUserSalts) {
         expect(() => sut.applyZKProof({ ...zkpdBase, userSalt })).toThrow(
-          '[applyZKProof] expected property "userSalt" to be a non-negative integer string',
+          '[applyZKProof] expected property "userSalt" to be a base-10 integer string from 0 to 2^128 - 1',
         )
       }
+    })
+    it('should accept the largest documented userSalt integer string', () => {
+      const sut = new ZKProofHandler()
+
+      expect(() =>
+        sut.applyZKProof({
+          ...zkpdBase,
+          userSalt: `${2n ** 128n - 1n}`,
+        }),
+      ).not.toThrow()
     })
     it('should throw if tokenClaimSub is not a string with content', () => {
       const sut = new ZKProofHandler()

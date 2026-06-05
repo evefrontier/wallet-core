@@ -36,6 +36,9 @@ export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
 
   /**
    * Creates a ZKEd25519Keypair from the supplied data.
+   *
+   * The optional `skipValidation` value is passed to both the underlying
+   * secret-key restoration and `applyZKProof`.
    */
   static fromZKEd25519KeypairData(
     keypairData: ZKEd25519KeypairData,
