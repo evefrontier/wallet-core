@@ -50,23 +50,35 @@ function hasPartialZKLoginSignatureFields(
 
 // Helper to check that the 'issBase64Details' property has the expected shape and type.
 function isIssBase64Details(value: unknown): boolean {
-  return (
-    isObjectRecord(value) &&
-    ISS_BASE64_DETAILS_FIELDS.every((property) => property in value) &&
-    typeof value.value === 'string' &&
-    isUint8Integer(value.indexMod4)
-  )
+  if (!isObjectRecord(value)) {
+    return false
+  }
+  if (!ISS_BASE64_DETAILS_FIELDS.every((property) => property in value)) {
+    return false
+  }
+  if (typeof value.value !== 'string') {
+    return false
+  }
+
+  return isUint8Integer(value.indexMod4)
 }
 
 // Helper to check that the 'proofPoints' property has the expected shape and type.
 function isProofPoints(value: unknown): boolean {
-  return (
-    isObjectRecord(value) &&
-    PROOF_POINTS_ARRAY_FIELDS.every((property) => property in value) &&
-    isStringArrayWithLength(value.a, 3) &&
-    is3x2ArrayOfStrings(value.b) &&
-    isStringArrayWithLength(value.c, 3)
-  )
+  if (!isObjectRecord(value)) {
+    return false
+  }
+  if (!PROOF_POINTS_ARRAY_FIELDS.every((property) => property in value)) {
+    return false
+  }
+  if (!isStringArrayWithLength(value.a, 3)) {
+    return false
+  }
+  if (!is3x2ArrayOfStrings(value.b)) {
+    return false
+  }
+
+  return isStringArrayWithLength(value.c, 3)
 }
 
 function clonePartialZkLoginSignature(
