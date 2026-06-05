@@ -1,5 +1,7 @@
 import type { getZkLoginSignature } from '@mysten/sui/zklogin'
 
+export type { RawSignParams } from '#src/crypto/sign-with-intent'
+
 /**
  * A partial ZKLogin Signature.
  */

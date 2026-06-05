@@ -8,7 +8,7 @@ import {
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
-} from '#src/utils'
+} from '#src/utils/validation'
 
 type Constructor<TInstance = object> = abstract new (
   // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin constructor constraints require any[].

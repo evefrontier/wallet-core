@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest'
-import { isPartialZKLoginSignature, ZKProofHandler } from '#src/crypto'
+import type { SignatureWithBytes } from '@mysten/sui/cryptography'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  createZkLoginSignature,
+  getZkProofResponseErrorMessage,
+  isPartialZKLoginSignature,
+  loadZkProof,
+  parseZkProofResponse,
+  signWithIntent,
+  ZKProofHandler,
+} from '#src/crypto'
 import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
   zkpdBase,
@@ -106,6 +115,177 @@ describe('isPartialZKLoginSignature', () => {
     for (const malformedSignature of malformedSignatures) {
       expect(isPartialZKLoginSignature(malformedSignature)).toBe(false)
     }
+  })
+})
+
+describe('signWithIntent', () => {
+  const messageBytes = new Uint8Array([1, 2, 3])
+
+  it('should sign transactions with signTransaction', async () => {
+    const signTransaction = vi.fn().mockResolvedValue({
+      bytes: 'transaction-bytes',
+      signature: 'transaction-signature',
+    } satisfies SignatureWithBytes)
+    const signPersonalMessage = vi.fn().mockResolvedValue({
+      bytes: 'message-bytes',
+      signature: 'message-signature',
+    } satisfies SignatureWithBytes)
+
+    const result = await signWithIntent(messageBytes, 'TransactionData', {
+      sui_address: '0x1',
+      keypair: {
+        signTransaction,
+        signPersonalMessage,
+      } as never,
+    })
+
+    expect(signTransaction).toHaveBeenCalledWith(messageBytes)
+    expect(signPersonalMessage).not.toHaveBeenCalled()
+    expect(result).toEqual({
+      bytes: 'transaction-bytes',
+      userSignature: 'transaction-signature',
+    })
+  })
+
+  it('should sign non-transaction scopes with signPersonalMessage', async () => {
+    const signTransaction = vi.fn().mockResolvedValue({
+      bytes: 'transaction-bytes',
+      signature: 'transaction-signature',
+    } satisfies SignatureWithBytes)
+    const signPersonalMessage = vi.fn().mockResolvedValue({
+      bytes: 'message-bytes',
+      signature: 'message-signature',
+    } satisfies SignatureWithBytes)
+
+    const result = await signWithIntent(messageBytes, 'PersonalMessage', {
+      sui_address: '0x1',
+      keypair: {
+        signTransaction,
+        signPersonalMessage,
+      } as never,
+    })
+
+    expect(signTransaction).not.toHaveBeenCalled()
+    expect(signPersonalMessage).toHaveBeenCalledWith(messageBytes)
+    expect(result).toEqual({
+      bytes: 'message-bytes',
+      userSignature: 'message-signature',
+    })
+  })
+
+  it('should require an address and a keypair', async () => {
+    await expect(
+      signWithIntent(messageBytes, 'PersonalMessage', {
+        sui_address: '',
+        keypair: {} as never,
+      }),
+    ).rejects.toThrow('[signWithIntent] User address not found')
+
+    await expect(
+      signWithIntent(messageBytes, 'PersonalMessage', {
+        sui_address: '0x1',
+        keypair: undefined as never,
+      }),
+    ).rejects.toThrow('[signWithIntent] Key pair not found')
+  })
+
+  it('should reject empty signer output', async () => {
+    await expect(
+      signWithIntent(messageBytes, 'PersonalMessage', {
+        sui_address: '0x1',
+        keypair: {
+          signTransaction: vi.fn(),
+          signPersonalMessage: vi.fn().mockResolvedValue({}),
+        } as never,
+      }),
+    ).rejects.toThrow('[signWithIntent] Signer returned no signature')
+  })
+})
+
+describe('ZK proof response helpers', () => {
+  it('should return error messages from proof responses', () => {
+    expect(getZkProofResponseErrorMessage(null)).toBe('Failed to get ZK proof')
+    expect(getZkProofResponseErrorMessage({ error: 'proof failed' })).toBe(
+      'proof failed',
+    )
+    expect(
+      getZkProofResponseErrorMessage({ error: { message: 'message failed' } }),
+    ).toBe('message failed')
+    expect(getZkProofResponseErrorMessage({ data: {} })).toBeNull()
+  })
+
+  it('should parse and load valid proof response data', async () => {
+    expect(
+      parseZkProofResponse({ data: zkpdBase.partialZkLoginSignature }),
+    ).toEqual(zkpdBase.partialZkLoginSignature)
+    await expect(
+      loadZkProof(async () => ({ data: zkpdBase.partialZkLoginSignature })),
+    ).resolves.toEqual(zkpdBase.partialZkLoginSignature)
+  })
+
+  it('should reject proof errors and malformed data', () => {
+    expect(() => parseZkProofResponse({ error: 'proof failed' })).toThrow(
+      'proof failed',
+    )
+    expect(() => parseZkProofResponse({ data: {} })).toThrow(
+      'ZK proof data not found or invalid',
+    )
+  })
+})
+
+describe('createZkLoginSignature', () => {
+  it('should create the same signature as ZKProofHandler', () => {
+    const baseSignature = {
+      signature:
+        'AHWKc5xpmRMg+ThF9UVF2nKwVan5XwsKGlBAfe6AzA5ZhThkl9Rh5QXEmKmwZCVq6pulpG7TbnUDhNkCbbgQbQe4wQR3rQjfYSMB7oXfwpBXKKVChxrnMsu50Qz/iBS/Lg==',
+      bytes: 'AQID',
+    }
+    const handler = new ZKProofHandler()
+    handler.applyZKProof(zkpdBase)
+
+    expect(
+      createZkLoginSignature({
+        maxEpoch: zkpdBase.maxEpoch.toString(),
+        partialZkLoginSignature: zkpdBase.partialZkLoginSignature,
+        claims: {
+          salt: zkpdBase.userSalt,
+          sub: zkpdBase.tokenClaimSub,
+          aud: zkpdBase.tokenClaimAud,
+        },
+        userSignature: baseSignature.signature,
+        bytes: baseSignature.bytes,
+      }),
+    ).toBe(handler.processSignature(baseSignature).signature)
+  })
+
+  it('should validate proof input, claims, and max epoch', () => {
+    const validParams = {
+      maxEpoch: zkpdBase.maxEpoch,
+      partialZkLoginSignature: zkpdBase.partialZkLoginSignature,
+      claims: {
+        salt: zkpdBase.userSalt,
+        sub: zkpdBase.tokenClaimSub,
+        aud: zkpdBase.tokenClaimAud,
+      },
+      userSignature: 'user-signature',
+      bytes: 'signed-bytes',
+    }
+
+    expect(() =>
+      createZkLoginSignature({
+        ...validParams,
+        partialZkLoginSignature: {},
+      }),
+    ).toThrow('ZK proof data not found or invalid')
+    expect(() =>
+      createZkLoginSignature({
+        ...validParams,
+        claims: { ...validParams.claims, salt: '' },
+      }),
+    ).toThrow('Missing required zkLogin profile field: salt')
+    expect(() =>
+      createZkLoginSignature({ ...validParams, maxEpoch: '' }),
+    ).toThrow('Max epoch is not set')
   })
 })
 
