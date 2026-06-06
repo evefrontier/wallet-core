@@ -234,14 +234,14 @@ describe('ZK proof response helpers', () => {
 })
 
 describe('createZkLoginSignature', () => {
-  it('should create the same signature as ZKProofHandler', () => {
+  it('should create the expected zkLogin signature', () => {
     const baseSignature = {
       signature:
         'AHWKc5xpmRMg+ThF9UVF2nKwVan5XwsKGlBAfe6AzA5ZhThkl9Rh5QXEmKmwZCVq6pulpG7TbnUDhNkCbbgQbQe4wQR3rQjfYSMB7oXfwpBXKKVChxrnMsu50Qz/iBS/Lg==',
       bytes: 'AQID',
     }
-    const handler = new ZKProofHandler()
-    handler.applyZKProof(zkpdBase)
+    const expectedSignature =
+      'BQNMMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Nk0xMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2NwExAwJMMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Nk0xMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2NwJMMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Nk0xMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2NwIBMQEwA2IxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3OE0xMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2NwExFWlzc0Jhc2U2NERldGFpbHNWYWx1ZQIMaGVhZGVyQmFzZTY0SzcyMDIxNDcxNjY3NDg3ODg5MzU0OTc5Mjg0MjgyODMxMzU4MzEzNjk3ODU1Nzk2NTI3OTc3MTM0Njc5MjA3MzAzODQ5NDUzNjM5NwEAAAAAAAAAYQB1inOcaZkTIPk4RfVFRdpysFWp+V8LChpQQH3ugMwOWYU4ZJfUYeUFxJipsGQlauqbpaRu0251A4TZAm24EG0HuMEEd60I32EjAe6F38KQVyilQoca5zLLudEM/4gUvy4='
 
     expect(
       createZkLoginSignature({
@@ -255,7 +255,7 @@ describe('createZkLoginSignature', () => {
         userSignature: baseSignature.signature,
         bytes: baseSignature.bytes,
       }),
-    ).toBe(handler.processSignature(baseSignature).signature)
+    ).toBe(expectedSignature)
   })
 
   it('should validate proof input, claims, and max epoch', () => {
