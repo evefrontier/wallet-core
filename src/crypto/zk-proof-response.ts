@@ -34,10 +34,10 @@ export function getZkProofResponseErrorMessage(
   if (!zkProof) {
     return 'Failed to get ZK proof'
   }
-  if (!zkProof.error) {
+  if (zkProof.error == null) {
     return null
   }
-  return typeof zkProof.error === 'string'
-    ? zkProof.error
-    : (zkProof.error.message ?? 'Failed to get ZK proof')
+  const message =
+    typeof zkProof.error === 'string' ? zkProof.error : zkProof.error.message
+  return message || 'Failed to get ZK proof'
 }

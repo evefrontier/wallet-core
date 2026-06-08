@@ -214,6 +214,21 @@ describe('ZK proof response helpers', () => {
     expect(getZkProofResponseErrorMessage({ data: {} })).toBeNull()
   })
 
+  it('should fall back to default message for empty error strings', () => {
+    expect(getZkProofResponseErrorMessage({ error: '' })).toBe(
+      'Failed to get ZK proof',
+    )
+    expect(getZkProofResponseErrorMessage({ error: { message: '' } })).toBe(
+      'Failed to get ZK proof',
+    )
+  })
+
+  it('should treat an explicit empty-string error as an error, not absent', () => {
+    expect(() => parseZkProofResponse({ error: '' })).toThrow(
+      'Failed to get ZK proof',
+    )
+  })
+
   it('should parse and load valid proof response data', async () => {
     expect(
       parseZkProofResponse({ data: zkpdBase.partialZkLoginSignature }),
