@@ -5,6 +5,11 @@ import type { CreateZkLoginSignatureParams } from './zk-types'
 /**
  * Builds the final zkLogin signature by applying a partial ZK proof to an
  * existing ephemeral user signature.
+ *
+ * @deprecated Prefer calling `applyZKProof` directly on `ZKEd25519Keypair`,
+ * `ZKSecp256r1Keypair`, or `ZKWebCryptoSigner`. This function remains
+ * available for cases where a keypair instance is required but the class-based
+ * API is not yet accessible.
  */
 export function createZkLoginSignature({
   maxEpoch,
