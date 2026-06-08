@@ -27,8 +27,9 @@ export function createZkLoginSignature({
     maxEpoch: parseMaxEpoch(maxEpoch),
     partialZkLoginSignature,
     userSalt: requireZkLoginClaim(claims.salt, 'salt'),
-    tokenClaimSub: requireZkLoginClaim(claims.sub, 'sub'),
-    tokenClaimAud: requireZkLoginClaim(claims.aud, 'aud'),
+    keyClaimName: requireZkLoginClaim(claims.keyClaimName, 'keyClaimName'),
+    keyClaimValue: requireZkLoginClaim(claims.keyClaimValue, 'keyClaimValue'),
+    aud: requireZkLoginClaim(claims.aud, 'aud'),
   })
 
   return zkProofHandler.processSignature({ signature: userSignature, bytes })

@@ -78,9 +78,9 @@ After creating a signer the public key can be obtained to perform the ZK Login
 const publicKey = keypair.getPublicKey()
 ```
 
-Then when the partial ZK login signature, salt, max epoch and `sub` and `aud` claims
-from the JWT are available, they can be applied to the keypair classes by using
-`applyZKProof`.
+Then when the partial ZK login signature, salt, max epoch, and JWT claim data
+used for zkLogin address derivation are available, they can be applied to the
+keypair classes by using `applyZKProof`.
 
 `applyZKProof` switches the signer into ZK Login signing mode for future
 `signWithIntent`, `signTransaction`, and `signPersonalMessage` calls. The
@@ -88,7 +88,9 @@ applied proof data is cloned into the signer, and `getProofData()` also returns
 a copy, so mutating the original input or a returned proof-data object does not
 mutate the signer's internal proof state. If the supplied partial signature
 includes `addressSeed`, wallet-core does not store it; the signer computes the
-address seed from `userSalt`, `tokenClaimSub`, and `tokenClaimAud`.
+address seed from `userSalt`, `keyClaimName`, `keyClaimValue`, and
+`aud`. Most Enoki-backed flows use `keyClaimName: 'sub'` and pass
+the JWT `sub` claim as `keyClaimValue`.
 
 By default, `applyZKProof` validates wallet-core's expected JSON proof-data
 shape before storing it:
@@ -105,7 +107,10 @@ shape before storing it:
 - `userSalt` must be a base-10 integer string from `0` to `2^128 - 1`, matching
   the salt bound in the
   [Sui zkLogin integration guide](https://docs.sui.io/sui-stack/zklogin-integration).
-- `tokenClaimSub` and `tokenClaimAud` must be non-empty strings.
+- `keyClaimName`, `keyClaimValue`, and `aud` must be non-empty
+  JWT claim strings. `keyClaimName` is the zkLogin key claim name used for
+  address derivation, typically `sub`; callers using a different stable JWT
+  claim should pass that claim name and value.
 
 Passing `{ skipValidation: true }` skips only those explicit validation checks.
 The signer still clones the supplied data, removes any supplied `addressSeed`,

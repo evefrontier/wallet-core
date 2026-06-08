@@ -1,6 +1,7 @@
 export type ZkLoginClaims = {
   salt: string
-  sub: string
+  keyClaimName: string
+  keyClaimValue: string
   aud: string
 }
 

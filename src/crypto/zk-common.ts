@@ -98,8 +98,9 @@ function cloneZKProofData(zkpd: ZKProofData): ZKProofData {
   return {
     maxEpoch: zkpd.maxEpoch,
     userSalt: zkpd.userSalt,
-    tokenClaimSub: zkpd.tokenClaimSub,
-    tokenClaimAud: zkpd.tokenClaimAud,
+    keyClaimName: zkpd.keyClaimName,
+    keyClaimValue: zkpd.keyClaimValue,
+    aud: zkpd.aud,
     ...(zkpd.partialZkLoginSignature
       ? {
           partialZkLoginSignature: clonePartialZkLoginSignature(
@@ -230,8 +231,9 @@ export class ZKProofHandler {
   #data: ZKProofData = {
     maxEpoch: 0,
     userSalt: '',
-    tokenClaimSub: '',
-    tokenClaimAud: '',
+    keyClaimName: '',
+    keyClaimValue: '',
+    aud: '',
   }
   // runtime state members
   #addressSeed: string = ''
@@ -269,7 +271,10 @@ export class ZKProofHandler {
    * - `partialZkLoginSignature` matches the zkLogin proof input shape,
    *   excluding `addressSeed`.
    * - `userSalt` is a base-10 integer string from 0 to 2^128 - 1.
-   * - `tokenClaimSub` and `tokenClaimAud` are non-empty strings.
+   * - `keyClaimName`, `keyClaimValue`, and `aud` are non-empty
+   *   JWT claim strings. `keyClaimName` is the zkLogin key claim name used
+   *   for address derivation, typically `sub`; callers using a different stable
+   *   JWT claim should pass that claim name and value.
    *
    * `skipValidation` skips only those explicit checks. The data is still cloned
    * and used to compute the address seed, so malformed values can still throw
@@ -312,8 +317,9 @@ export class ZKProofHandler {
           `[applyZKProof] expected property "userSalt" to be a base-10 integer string from 0 to 2^128 - 1`,
         )
       }
-      throwIfNotStringOrEmpty(zkpd.tokenClaimSub, 'tokenClaimSub')
-      throwIfNotStringOrEmpty(zkpd.tokenClaimAud, 'tokenClaimAud')
+      throwIfNotStringOrEmpty(zkpd.keyClaimName, 'keyClaimName')
+      throwIfNotStringOrEmpty(zkpd.keyClaimValue, 'keyClaimValue')
+      throwIfNotStringOrEmpty(zkpd.aud, 'aud')
     }
     this.#data = cloneZKProofData(zkpd)
     this.setAddressSeed()
@@ -322,15 +328,16 @@ export class ZKProofHandler {
   }
 
   /**
-   * Sets the address seed by calling genAddressSeed with the current salt and token claim data.
+   * Sets the address seed by calling genAddressSeed with the current salt and
+   * JWT key claim data.
    * This is called when new proof data is applied.
    */
   protected setAddressSeed(): void {
     this.#addressSeed = genAddressSeed(
       BigInt(this.#data.userSalt as string),
-      'sub',
-      this.#data.tokenClaimSub as string,
-      this.#data.tokenClaimAud as string,
+      this.#data.keyClaimName as string,
+      this.#data.keyClaimValue as string,
+      this.#data.aud as string,
     ).toString()
   }
 

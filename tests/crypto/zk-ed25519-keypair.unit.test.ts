@@ -33,8 +33,9 @@ describe('zk-ed25519-keypair (a Keypair/Signer that can ZK sign)', () => {
     const sutZkProofData = sut.getProofData()
     expect(sutZkProofData.maxEpoch).toBe(refZkProofData.maxEpoch)
     expect(sutZkProofData.userSalt).toBe(refZkProofData.userSalt)
-    expect(sutZkProofData.tokenClaimSub).toBe(refZkProofData.tokenClaimSub)
-    expect(sutZkProofData.tokenClaimAud).toBe(refZkProofData.tokenClaimAud)
+    expect(sutZkProofData.keyClaimName).toBe(refZkProofData.keyClaimName)
+    expect(sutZkProofData.keyClaimValue).toBe(refZkProofData.keyClaimValue)
+    expect(sutZkProofData.aud).toBe(refZkProofData.aud)
     expect(sutZkProofData.partialZkLoginSignature).toEqual(
       refZkProofData.partialZkLoginSignature,
     )

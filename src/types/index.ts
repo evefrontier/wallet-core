@@ -32,13 +32,19 @@ export interface ZKProofData {
    */
   userSalt: string
   /**
-   * JWT subject claim used when deriving the address seed.
+   * JWT key claim name used when deriving the address seed. Most Enoki-backed
+   * flows use `sub`; callers using a different stable JWT claim should pass
+   * that claim name.
    */
-  tokenClaimSub: string
+  keyClaimName: string
+  /**
+   * JWT key claim value used when deriving the address seed.
+   */
+  keyClaimValue: string
   /**
    * JWT audience claim used when deriving the address seed.
    */
-  tokenClaimAud: string
+  aud: string
 }
 
 /**

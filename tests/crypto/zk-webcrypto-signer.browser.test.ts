@@ -41,8 +41,9 @@ describe('ZKWebCryptoSigner', async () => {
     const sutZkProofData = sut.getProofData()
     expect(sutZkProofData.maxEpoch).toBe(zkpdBase.maxEpoch)
     expect(sutZkProofData.userSalt).toBe(zkpdBase.userSalt)
-    expect(sutZkProofData.tokenClaimSub).toBe(zkpdBase.tokenClaimSub)
-    expect(sutZkProofData.tokenClaimAud).toBe(zkpdBase.tokenClaimAud)
+    expect(sutZkProofData.keyClaimName).toBe(zkpdBase.keyClaimName)
+    expect(sutZkProofData.keyClaimValue).toBe(zkpdBase.keyClaimValue)
+    expect(sutZkProofData.aud).toBe(zkpdBase.aud)
     expect(sutZkProofData.partialZkLoginSignature).toEqual(
       zkpdBase.partialZkLoginSignature,
     )

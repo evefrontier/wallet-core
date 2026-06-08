@@ -3,8 +3,9 @@ import type { ZKProofData } from '#src/types'
 export const zkpdBaseWithoutPartialSignature: ZKProofData = {
   maxEpoch: 1,
   userSalt: '1234567890293856473923453',
-  tokenClaimSub: 'someSub',
-  tokenClaimAud: 'someAud',
+  keyClaimName: 'sub',
+  keyClaimValue: 'someSub',
+  aud: 'someAud',
 }
 
 export const zkpdBase: ZKProofData = {
