@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  buildTransactionBytes,
   is3x2ArrayOfStrings,
   isNonEmptyString,
   isNonNegativeBigIntString,
+  isObjectRecord,
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
@@ -43,6 +45,17 @@ describe('Utility Functions', () => {
     })
   })
 
+  describe('isObjectRecord', () => {
+    it('should return true only for non-null objects', () => {
+      expect(isObjectRecord({ value: 1 })).toBe(true)
+      expect(isObjectRecord([])).toBe(true)
+      expect(isObjectRecord(null)).toBe(false)
+      expect(isObjectRecord('value')).toBe(false)
+      expect(isObjectRecord(1)).toBe(false)
+      expect(isObjectRecord(() => undefined)).toBe(false)
+    })
+  })
+
   describe('isNonNegativeBigIntString', () => {
     it('should return true only for non-negative bigint strings', () => {
       expect(isNonNegativeBigIntString('0')).toBe(true)
@@ -78,6 +91,42 @@ describe('Utility Functions', () => {
       expect(isStringArrayWithLength(['a'], 2)).toBe(false)
       expect(isStringArrayWithLength(['a', 1], 2)).toBe(false)
       expect(isStringArrayWithLength('not-array', 2)).toBe(false)
+    })
+  })
+
+  describe('buildTransactionBytes', () => {
+    it('should set the sender and build transaction bytes', async () => {
+      const bytes = new Uint8Array([1, 2, 3])
+      const tx = {
+        setSender: vi.fn(),
+        setSenderIfNotSet: vi.fn(),
+        build: vi.fn().mockResolvedValue(bytes),
+      }
+      const client = { core: {} }
+
+      await expect(
+        buildTransactionBytes(tx as never, '0xsender', client as never),
+      ).resolves.toBe(bytes)
+
+      expect(tx.setSender).toHaveBeenCalledWith('0xsender')
+      expect(tx.setSenderIfNotSet).not.toHaveBeenCalled()
+      expect(tx.build).toHaveBeenCalledWith({ client })
+    })
+
+    it('should support setSenderIfNotSet', async () => {
+      const tx = {
+        setSender: vi.fn(),
+        setSenderIfNotSet: vi.fn(),
+        build: vi.fn().mockResolvedValue(new Uint8Array([1])),
+      }
+      const client = { core: {} }
+
+      await buildTransactionBytes(tx as never, '0xsender', client as never, {
+        setSenderIfNotSet: true,
+      })
+
+      expect(tx.setSender).not.toHaveBeenCalled()
+      expect(tx.setSenderIfNotSet).toHaveBeenCalledWith('0xsender')
     })
   })
 })
