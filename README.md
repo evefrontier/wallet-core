@@ -84,22 +84,33 @@ from the JWT are available, they can be applied to the keypair classes by using
 
 `applyZKProof` switches the signer into ZK Login signing mode for future
 `signWithIntent`, `signTransaction`, and `signPersonalMessage` calls. The
-applied proof data is copied into the signer, and `getProofData()` also returns
+applied proof data is cloned into the signer, and `getProofData()` also returns
 a copy, so mutating the original input or a returned proof-data object does not
-mutate the signer's internal proof state.
+mutate the signer's internal proof state. If the supplied partial signature
+includes `addressSeed`, wallet-core does not store it; the signer computes the
+address seed from `userSalt`, `tokenClaimSub`, and `tokenClaimAud`.
 
-By default, `applyZKProof` validates the input shape before storing it:
+By default, `applyZKProof` validates wallet-core's expected JSON proof-data
+shape before storing it:
 
 - `maxEpoch` must be a positive safe integer.
 - `partialZkLoginSignature` must match the zkLogin proof input shape, excluding
   `addressSeed`.
-- `userSalt` must be a non-negative integer string.
+- Proof points, `issBase64Details.value`, and `headerBase64` must be strings in
+  the expected shape. Empty proof-service strings are not rejected by this shape
+  check.
+- `issBase64Details.indexMod4` must be an integer in the unsigned 8-bit
+  serialization range. wallet-core does not assert an undocumented 0..3 semantic
+  range.
+- `userSalt` must be a base-10 integer string from `0` to `2^128 - 1`, matching
+  the salt bound in the
+  [Sui zkLogin integration guide](https://docs.sui.io/sui-stack/zklogin-integration).
 - `tokenClaimSub` and `tokenClaimAud` must be non-empty strings.
 
 Passing `{ skipValidation: true }` skips only those explicit validation checks.
-The signer still stores the supplied data and computes the address seed, so
-malformed fields can still fail during address-seed computation or later when
-they are used.
+The signer still clones the supplied data, removes any supplied `addressSeed`,
+and computes its own address seed, so malformed fields can still fail during
+address-seed computation or later when they are used for signing.
 
 If no `partialZkLoginSignature` is stored, signing falls back to the underlying
 keypair or signer and returns a normal Sui signature.

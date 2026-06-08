@@ -28,25 +28,25 @@ export function isObjectRecord(
 }
 
 /**
- * Checks whether `value` is a non-empty string that can be parsed by `BigInt`
- * and represents a value greater than or equal to zero.
+ * Checks whether `value` is a base-10 integer string from zero up to, but not
+ * including, `upperBoundExclusive`.
  *
- * Decimal, hexadecimal, and other string formats accepted by `BigInt` are
- * accepted here too.
+ * This intentionally rejects signs, whitespace, separators, and non-decimal
+ * prefixes such as `0x`.
  *
  * @param value {unknown}
- * @returns {boolean} True when `value` can be parsed as a non-negative bigint.
+ * @param upperBoundExclusive {bigint}
+ * @returns {boolean} True when `value` is a decimal integer string in range.
  */
-export function isNonNegativeBigIntString(value: unknown): value is string {
-  if (!isNonEmptyString(value)) {
+export function isUnsignedDecimalIntegerStringBelow(
+  value: unknown,
+  upperBoundExclusive: bigint,
+): value is string {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
     return false
   }
 
-  try {
-    return BigInt(value) >= 0n
-  } catch {
-    return false
-  }
+  return BigInt(value) < upperBoundExclusive
 }
 
 /**

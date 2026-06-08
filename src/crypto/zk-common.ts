@@ -4,11 +4,11 @@ import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
   is3x2ArrayOfStrings,
   isNonEmptyString,
-  isNonNegativeBigIntString,
   isObjectRecord,
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
+  isUnsignedDecimalIntegerStringBelow,
 } from '#src/utils/validation'
 
 type Constructor<TInstance = object> = abstract new (
@@ -36,6 +36,9 @@ const ISS_BASE64_DETAILS_FIELDS = ['value', 'indexMod4'] as const
 
 // Used to establish that the 'proofPoints' property has the expected shape.
 const PROOF_POINTS_ARRAY_FIELDS = ['a', 'b', 'c'] as const
+
+// Sui documents zkLogin user salt as a 16-byte value or integer below 2^128.
+const ZK_LOGIN_USER_SALT_UPPER_BOUND = 2n ** 128n
 
 // Helper to check that we have the expected properties.
 function hasPartialZKLoginSignatureFields(
@@ -139,17 +142,18 @@ type ZKProofHandling = {
   /**
    * Applies proof data that enables ZK Login signing for future signatures.
    *
-   * The supplied proof data is copied before it is stored. Mutating the input
+   * The supplied proof data is cloned before it is stored, and any supplied
+   * `partialZkLoginSignature.addressSeed` is not stored. Mutating the input
    * object after this call does not mutate signer state. The returned proof data
    * is also a copy.
    *
-   * By default, this validates proof-data shape and required fields before
-   * storing them. `skipValidation` skips only those explicit checks; the data is
-   * still stored and used to compute the address seed, so malformed values can
-   * still throw during address-seed computation or later signing.
+   * By default, this validates wallet-core's expected JSON proof-data shape and
+   * required fields before storing them. `skipValidation` skips only those
+   * explicit checks; cloning, address-seed computation, and later signing can
+   * still throw for malformed values.
    *
    * @param zkpd {ZKProofData} Proof data to apply to the signer.
-   * @param options optional object that can have `skipValidation` set in order to skip validation.
+   * @param options Optional object. Set `skipValidation` to skip wallet-core's explicit validation checks.
    * @returns {ZKProofData} A copy of the proof data now stored by the signer.
    */
   applyZKProof(
@@ -254,23 +258,25 @@ export class ZKProofHandler {
   /**
    * Applies proof data that enables ZK Login signing for future signatures.
    *
-   * The supplied proof data is copied before it is stored. Mutating the input
+   * The supplied proof data is cloned before it is stored, and any supplied
+   * `partialZkLoginSignature.addressSeed` is not stored. Mutating the input
    * object after this call does not mutate handler state. The returned proof
    * data is also a copy.
    *
-   * When validation is enabled, this checks that:
+   * When validation is enabled, this checks wallet-core's expected JSON
+   * proof-data shape:
    * - `maxEpoch` is a positive safe integer.
    * - `partialZkLoginSignature` matches the zkLogin proof input shape,
    *   excluding `addressSeed`.
-   * - `userSalt` is a non-negative integer string.
+   * - `userSalt` is a base-10 integer string from 0 to 2^128 - 1.
    * - `tokenClaimSub` and `tokenClaimAud` are non-empty strings.
    *
-   * `skipValidation` skips only those explicit checks. The data is still stored
+   * `skipValidation` skips only those explicit checks. The data is still cloned
    * and used to compute the address seed, so malformed values can still throw
    * here or later when signing.
    *
    * @param zkpd {ZKProofData} Proof data to apply to the handler.
-   * @param options optional object that can have `skipValidation` set in order to skip validation.
+   * @param options Optional object. Set `skipValidation` to skip wallet-core's explicit validation checks.
    * @returns {ZKProofData} A copy of the proof data now stored by the handler.
    */
   applyZKProof(
@@ -296,9 +302,14 @@ export class ZKProofHandler {
           `[applyZKProof] expected property "partialZkLoginSignature" to match zkLogin proof input shape`,
         )
       }
-      if (!isNonNegativeBigIntString(zkpd.userSalt)) {
+      if (
+        !isUnsignedDecimalIntegerStringBelow(
+          zkpd.userSalt,
+          ZK_LOGIN_USER_SALT_UPPER_BOUND,
+        )
+      ) {
         throw new Error(
-          `[applyZKProof] expected property "userSalt" to be a non-negative integer string`,
+          `[applyZKProof] expected property "userSalt" to be a base-10 integer string from 0 to 2^128 - 1`,
         )
       }
       throwIfNotStringOrEmpty(zkpd.tokenClaimSub, 'tokenClaimSub')

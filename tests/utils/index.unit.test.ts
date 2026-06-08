@@ -3,11 +3,11 @@ import {
   buildTransactionBytes,
   is3x2ArrayOfStrings,
   isNonEmptyString,
-  isNonNegativeBigIntString,
   isObjectRecord,
   isPositiveSafeInteger,
   isStringArrayWithLength,
   isUint8Integer,
+  isUnsignedDecimalIntegerStringBelow,
 } from '#src/utils'
 
 describe('Utility Functions', () => {
@@ -56,13 +56,18 @@ describe('Utility Functions', () => {
     })
   })
 
-  describe('isNonNegativeBigIntString', () => {
-    it('should return true only for non-negative bigint strings', () => {
-      expect(isNonNegativeBigIntString('0')).toBe(true)
-      expect(isNonNegativeBigIntString('12345678901234567890')).toBe(true)
-      expect(isNonNegativeBigIntString('-1')).toBe(false)
-      expect(isNonNegativeBigIntString('not-a-number')).toBe(false)
-      expect(isNonNegativeBigIntString('')).toBe(false)
+  describe('isUnsignedDecimalIntegerStringBelow', () => {
+    it('should return true only for unsigned decimal integer strings below the upper bound', () => {
+      const upperBound = 10n
+
+      expect(isUnsignedDecimalIntegerStringBelow('0', upperBound)).toBe(true)
+      expect(isUnsignedDecimalIntegerStringBelow('09', upperBound)).toBe(true)
+      expect(isUnsignedDecimalIntegerStringBelow('10', upperBound)).toBe(false)
+      expect(isUnsignedDecimalIntegerStringBelow('-1', upperBound)).toBe(false)
+      expect(isUnsignedDecimalIntegerStringBelow('0x1', upperBound)).toBe(false)
+      expect(isUnsignedDecimalIntegerStringBelow('1.5', upperBound)).toBe(false)
+      expect(isUnsignedDecimalIntegerStringBelow(' 1 ', upperBound)).toBe(false)
+      expect(isUnsignedDecimalIntegerStringBelow('', upperBound)).toBe(false)
     })
   })
 

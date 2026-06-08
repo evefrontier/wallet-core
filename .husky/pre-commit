@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 25 --silent
-export PATH="$HOME/.bun/bin:$PATH"
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+. "$ROOT/scripts/husky-env.sh"
+
 bun run lint:fix
 bun run test
