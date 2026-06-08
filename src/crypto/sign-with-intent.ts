@@ -10,8 +10,10 @@ export interface RawSignParams {
  * signers and normalizes the returned user signature shape.
  *
  * @deprecated Use `ZKEd25519Keypair`, `ZKSecp256r1Keypair`, or
- * `ZKWebCryptoSigner` instead — they expose `signWithIntent` directly on the
- * keypair instance.
+ * `ZKWebCryptoSigner` instead. After calling `applyZKProof` on the keypair,
+ * call `signTransaction` or `signPersonalMessage` directly, or supply the
+ * keypair to a Mysten Labs client class (gRPC, GraphQL, JSON-RPC) and use
+ * `signAndExecuteTransaction`.
  */
 export async function signWithIntent(
   messageBytes: Uint8Array,
