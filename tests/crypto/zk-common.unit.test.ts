@@ -1,4 +1,5 @@
 import type { SignatureWithBytes } from '@mysten/sui/cryptography'
+import { genAddressSeed } from '@mysten/sui/zklogin'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createZkLoginSignature,
@@ -284,8 +285,9 @@ describe('createZkLoginSignature', () => {
         partialZkLoginSignature: zkpdBase.partialZkLoginSignature,
         claims: {
           salt: zkpdBase.userSalt,
-          sub: zkpdBase.tokenClaimSub,
-          aud: zkpdBase.tokenClaimAud,
+          keyClaimName: zkpdBase.keyClaimName,
+          keyClaimValue: zkpdBase.keyClaimValue,
+          aud: zkpdBase.aud,
         },
         userSignature: baseSignature.signature,
         bytes: baseSignature.bytes,
@@ -299,8 +301,9 @@ describe('createZkLoginSignature', () => {
       partialZkLoginSignature: zkpdBase.partialZkLoginSignature,
       claims: {
         salt: zkpdBase.userSalt,
-        sub: zkpdBase.tokenClaimSub,
-        aud: zkpdBase.tokenClaimAud,
+        keyClaimName: zkpdBase.keyClaimName,
+        keyClaimValue: zkpdBase.keyClaimValue,
+        aud: zkpdBase.aud,
       },
       userSignature: 'user-signature',
       bytes: 'signed-bytes',
@@ -362,20 +365,43 @@ describe('ZKProofHandler', () => {
         }),
       ).not.toThrow()
     })
-    it('should throw if tokenClaimSub is not a string with content', () => {
+    it('should derive the address seed from key claim name, value, and audience', () => {
       const sut = new ZKProofHandler()
-      expect(() =>
-        sut.applyZKProof({ ...zkpdBase, tokenClaimSub: '' }),
-      ).toThrow(
-        '[applyZKProof] expected property "tokenClaimSub" to be a string with content',
+      const keyClaimName = 'email'
+      const keyClaimValue = 'pilot@example.com'
+      sut.applyZKProof({
+        ...zkpdBase,
+        keyClaimName,
+        keyClaimValue,
+      })
+
+      expect(sut.getAddressSeed()).toBe(
+        genAddressSeed(
+          BigInt(zkpdBase.userSalt),
+          keyClaimName,
+          keyClaimValue,
+          zkpdBase.aud,
+        ).toString(),
       )
     })
-    it('should throw if tokenClaimAud is not a string with content', () => {
+    it('should throw if keyClaimName is not a string with content', () => {
+      const sut = new ZKProofHandler()
+      expect(() => sut.applyZKProof({ ...zkpdBase, keyClaimName: '' })).toThrow(
+        '[applyZKProof] expected property "keyClaimName" to be a string with content',
+      )
+    })
+    it('should throw if keyClaimValue is not a string with content', () => {
       const sut = new ZKProofHandler()
       expect(() =>
-        sut.applyZKProof({ ...zkpdBase, tokenClaimAud: '' }),
+        sut.applyZKProof({ ...zkpdBase, keyClaimValue: '' }),
       ).toThrow(
-        '[applyZKProof] expected property "tokenClaimAud" to be a string with content',
+        '[applyZKProof] expected property "keyClaimValue" to be a string with content',
+      )
+    })
+    it('should throw if aud is not a string with content', () => {
+      const sut = new ZKProofHandler()
+      expect(() => sut.applyZKProof({ ...zkpdBase, aud: '' })).toThrow(
+        '[applyZKProof] expected property "aud" to be a string with content',
       )
     })
     it('should throw if partialZkLoginSignature is not in the correct format', () => {
@@ -397,8 +423,9 @@ describe('ZKProofHandler', () => {
             ...zkpdBase,
             maxEpoch: -1,
             userSalt: '',
-            tokenClaimSub: '',
-            tokenClaimAud: '',
+            keyClaimName: '',
+            keyClaimValue: '',
+            aud: '',
             partialZkLoginSignature: {
               addressSeed: 'someAddressSeed',
               proofPoints: {
@@ -426,8 +453,9 @@ describe('ZKProofHandler', () => {
       )
       expect(sutProofData.maxEpoch).toBe(-1)
       expect(sutProofData.userSalt).toBe('')
-      expect(sutProofData.tokenClaimSub).toBe('')
-      expect(sutProofData.tokenClaimAud).toBe('')
+      expect(sutProofData.keyClaimName).toBe('')
+      expect(sutProofData.keyClaimValue).toBe('')
+      expect(sutProofData.aud).toBe('')
       expect(sutProofData.partialZkLoginSignature).toHaveProperty('proofPoints')
       expect(sutProofData.partialZkLoginSignature).toHaveProperty(
         'issBase64Details',
@@ -444,8 +472,9 @@ describe('ZKProofHandler', () => {
             ...zkpdBaseWithoutPartialSignature,
             maxEpoch: -1,
             userSalt: '',
-            tokenClaimSub: '',
-            tokenClaimAud: '',
+            keyClaimName: '',
+            keyClaimValue: '',
+            aud: '',
           },
           { skipValidation: true },
         ),
@@ -454,8 +483,9 @@ describe('ZKProofHandler', () => {
       expect(sutProofData.partialZkLoginSignature).toBeUndefined()
       expect(sutProofData.maxEpoch).toBe(-1)
       expect(sutProofData.userSalt).toBe('')
-      expect(sutProofData.tokenClaimSub).toBe('')
-      expect(sutProofData.tokenClaimAud).toBe('')
+      expect(sutProofData.keyClaimName).toBe('')
+      expect(sutProofData.keyClaimValue).toBe('')
+      expect(sutProofData.aud).toBe('')
     })
   })
 
