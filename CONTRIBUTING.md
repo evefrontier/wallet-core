@@ -52,8 +52,7 @@ This is a [Bun](https://bun.sh) repo. Use `bun`, not `npm` or `pnpm`.
 | Lint & format (Biome) | `bun run lint` / `bun run lint:fix` |
 | Unit tests | `bun run test` (all tests, headless) / `bun run test:coverage` (CI) |
 
-Formatting and linting are enforced by [Biome](https://biomejs.dev): single quotes, no
-semicolons, 2-space indent, auto-organized imports. Use `bun run lint:fix`.
+Formatting and linting are enforced by [Biome](https://biomejs.dev): single quotes, no semicolons, 2-space indent, auto-organized imports. Use `bun run lint:fix`.
 
 A pre-commit hook runs `bun run lint:fix` and `bun run test`; a pre-push hook runs `bun audit` and the full test suite.
 
