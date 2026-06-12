@@ -17,7 +17,7 @@
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
-  "excludeExternals": true,
+  "excludeExternals": false,
   "categoryOrder": ["Primary API", "Supporting Types and Utilities", "*"],
   "navigation": {
     "includeCategories": true,
@@ -28,6 +28,6 @@
     "protected": false,
     "private": false,
     "inherited": true,
-    "external": false
+    "external": true
   }
 }
