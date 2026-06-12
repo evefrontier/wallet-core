@@ -5,7 +5,24 @@ import { withZKProofHandling } from './zk-common'
 const ZKSecp256r1KeypairBase = withZKProofHandling(Secp256r1Keypair)
 
 /**
- * A wrapper around Secp256r1Keypair that can hold ZKLogin proof data and apply it to the signing process.
+ * Drop-in replacement for Mysten Labs' `Secp256r1Keypair` with zkLogin proof-aware signing support.
+ *
+ * This class keeps the same signing surface as `Secp256r1Keypair` and adds proof-aware behavior
+ * through `applyZKProof`. Once you call `applyZKProof` with your ZK Login proof data, subsequent
+ * calls to `signWithIntent`, `signTransaction`, and `signPersonalMessage` will produce zkLogin signatures.
+ * Without proof data applied, it behaves identically to the underlying Mysten Labs class.
+ *
+ * @example
+ * ```ts
+ * const keypair = ZKSecp256r1Keypair.fromSeed(seedBytes)
+ * const publicKey = keypair.getPublicKey()
+ *
+ * // Later, after obtaining ZK proof data:
+ * keypair.applyZKProof({ maxEpoch, userSalt, keyClaimName: 'sub', keyClaimValue: sub, aud, partialZkLoginSignature })
+ * const { signature } = await keypair.signTransaction(txBytes)
+ * ```
+ *
+ * @category Primary API
  */
 export class ZKSecp256r1Keypair extends ZKSecp256r1KeypairBase {
   /**

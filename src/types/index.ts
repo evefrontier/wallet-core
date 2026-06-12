@@ -19,7 +19,7 @@ export type PartialZkLoginSignature = Omit<
  */
 export interface ZKProofData {
   /**
-   * Maximum Sui epoch for which the zkLogin proof may be used.
+  * Maximum Sui epoch for which the zkLogin proof may be used.
    */
   maxEpoch: number
   /**
