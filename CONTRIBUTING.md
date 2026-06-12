@@ -32,6 +32,10 @@ When opening the pull request you will be presented with a template and a series
 
 When contributing code to wallet-core, please follow these guidelines:
 
+### Commits and PR titles
+
+Make sure that your commit messages and PR titles follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). We enforce this in CI by using [wagoid/commitlint-github-action](https://github.com/wagoid/commitlint-github-action).
+
 ### Architecture
 
 Check the [Architecture ADR](https://github.com/evefrontier/architecture-decision-log/blob/main/adr/0008-zklogin-implementation-auth-flow.md) for architecture reference and design decisions.
