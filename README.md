@@ -8,7 +8,7 @@ Early version. APIs may evolve as wallet and zkLogin based signing requirements 
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 25.6.1 or newer (see `.nvmrc`)
 - bun 1.3.13 (project package manager)
 
 This package publishes ESM-only entrypoints and TypeScript declarations from `dist`.

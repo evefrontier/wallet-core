@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+. "$ROOT/scripts/husky-env.sh"
+
+bun audit
+bun run test
