@@ -11,25 +11,30 @@
       "import": "./dist/crypto/index.mjs",
       "default": "./dist/crypto/index.mjs"
     },
-    "./definitions": {
-      "types": "./dist/definitions/index.d.mts",
-      "import": "./dist/definitions/index.mjs",
-      "default": "./dist/definitions/index.mjs"
+    "./eve-token": {
+      "types": "./dist/eve-token/index.d.mts",
+      "import": "./dist/eve-token/index.mjs",
+      "default": "./dist/eve-token/index.mjs"
     },
-    "./types": {
-      "types": "./dist/types/index.d.mts",
-      "import": "./dist/types/index.mjs",
-      "default": "./dist/types/index.mjs"
+    "./sponsored-transaction": {
+      "types": "./dist/sponsored-transaction/index.d.mts",
+      "import": "./dist/sponsored-transaction/index.mjs",
+      "default": "./dist/sponsored-transaction/index.mjs"
+    },
+    "./tenant": {
+      "types": "./dist/tenant/index.d.mts",
+      "import": "./dist/tenant/index.mjs",
+      "default": "./dist/tenant/index.mjs"
     },
     "./utils": {
       "types": "./dist/utils/index.d.mts",
       "import": "./dist/utils/index.mjs",
       "default": "./dist/utils/index.mjs"
     },
-    "./wallet-standard-extensions": {
-      "types": "./dist/wallet-standard-extensions/index.d.mts",
-      "import": "./dist/wallet-standard-extensions/index.mjs",
-      "default": "./dist/wallet-standard-extensions/index.mjs"
+    "./wallet-features": {
+      "types": "./dist/wallet-features/index.d.mts",
+      "import": "./dist/wallet-features/index.mjs",
+      "default": "./dist/wallet-features/index.mjs"
     }
   },
   "imports": {

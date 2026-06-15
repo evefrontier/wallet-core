@@ -1,6 +1,5 @@
 import type { IntentScope, SignatureWithBytes } from '@mysten/sui/cryptography'
 import { genAddressSeed, getZkLoginSignature } from '@mysten/sui/zklogin'
-import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
   is3x2ArrayOfStrings,
   isNonEmptyString,
@@ -10,6 +9,7 @@ import {
   isUint8Integer,
   isUnsignedDecimalIntegerStringBelow,
 } from '#src/utils/validation'
+import type { PartialZkLoginSignature, ZKProofData } from './zk-login'
 
 /**
  * Constructor constraint used by `withZKProofHandling`.

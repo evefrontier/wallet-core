@@ -32,10 +32,11 @@ bun add @evefrontier/wallet-core
 Supported package subpath exports:
 
 - @evefrontier/wallet-core/crypto
-- @evefrontier/wallet-core/definitions
-- @evefrontier/wallet-core/types (type-only)
+- @evefrontier/wallet-core/eve-token
+- @evefrontier/wallet-core/sponsored-transaction
+- @evefrontier/wallet-core/tenant
 - @evefrontier/wallet-core/utils
-- @evefrontier/wallet-core/wallet-standard-extensions
+- @evefrontier/wallet-core/wallet-features
 
 ## Usage
 

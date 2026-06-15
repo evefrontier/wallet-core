@@ -1,7 +1,15 @@
 import { decodeSuiPrivateKey } from '@mysten/sui/cryptography'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import type { ZKEd25519KeypairData, ZKProofData } from '#src/types'
 import { withZKProofHandling } from './zk-common'
+import type { ZKProofData } from './zk-login.ts'
+
+/**
+ * Serialized Ed25519 zkLogin keypair data.
+ */
+export interface ZKEd25519KeypairData {
+  secretKey: Uint8Array | string
+  zkProofData: ZKProofData
+}
 
 const ZKEd25519KeypairBase = withZKProofHandling(Ed25519Keypair)
 

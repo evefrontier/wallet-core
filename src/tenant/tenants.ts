@@ -1,5 +1,3 @@
-import type { TenantConfig } from '#src/types'
-
 /** Tenant IDs.
  *  @category Constants
  */
@@ -16,6 +14,15 @@ export enum TenantId {
  *  @category Constants
  */
 export const DEFAULT_TENANT = TenantId.STILLNESS
+
+/** Per-tenant config: EVE token package ID (Sui) and Datahub API host. v0.0.18
+ * @category Constants
+ */
+export interface TenantConfig {
+  packageId: string
+  evePackageId: string
+  datahubHost: string
+}
 
 /** Single source of truth for the six tenants (package ID + datahub host).
  * Corresponds to world contracts v0.0.18

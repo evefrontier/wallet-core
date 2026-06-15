@@ -1,4 +1,4 @@
-import { EVE_PACKAGE_ID_BY_TENANT, TenantId } from './tenants'
+import { EVE_PACKAGE_ID_BY_TENANT, TenantId } from '#src/tenant'
 
 /** @category Constants */
 export const EVE_COIN_TYPE_SUFFIX = '::EVE::EVE'
@@ -8,8 +8,6 @@ export const EVE_COIN_TYPE_SUFFIX = '::EVE::EVE'
  * Format: `{packageId}::EVE::EVE` (Sui Move type used by RPC/GraphQL).
  * @param tenantId - The tenant identifier (e.g., TenantId.UTOPIA, TenantId.STILLNESS)
  * @returns The fully qualified EVE coin type string
- *
- * @category Utilities - Config
  */
 export function getEveCoinType(tenantId: TenantId): string {
   return `${EVE_PACKAGE_ID_BY_TENANT[tenantId]}${EVE_COIN_TYPE_SUFFIX}`

@@ -2,10 +2,11 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
     "src/crypto/index.ts",
-    "src/definitions/index.ts",
-    "src/types/index.ts",
+    "src/eve-token/index.ts",
+    "src/sponsored-transaction/index.ts",
+    "src/tenant/index.ts",
     "src/utils/index.ts",
-    "src/wallet-standard-extensions/index.ts"
+    "src/wallet-features/index.ts"
   ],
   "exclude": ["**/*.test.ts"],
   "tsconfig": "./tsconfig.json",

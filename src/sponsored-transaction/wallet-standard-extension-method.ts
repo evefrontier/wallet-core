@@ -1,9 +1,3 @@
-import type { SuiWalletFeatures } from '@mysten/wallet-standard'
-/* EveFrontierSponsoredTransactions custom types */
-
-export const EVEFRONTIER_SPONSORED_TRANSACTION =
-  'evefrontier:sponsoredTransaction' as const
-
 export interface SponsoredTransactionMetadata {
   name?: string
   description?: string
@@ -29,10 +23,3 @@ export type SponsoredTransactionOutput = {
 export type SponsoredTransactionMethod = (
   input: SponsoredTransactionInput,
 ) => Promise<SponsoredTransactionOutput>
-
-export type EveVaultWalletFeatures = SuiWalletFeatures & {
-  [EVEFRONTIER_SPONSORED_TRANSACTION]: {
-    version: '1.0.1'
-    signSponsoredTransaction: SponsoredTransactionMethod
-  }
-}
