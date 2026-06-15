@@ -276,7 +276,7 @@ export class ZKProofHandler {
   }
 
   /**
-  * Applies proof data that enables zkLogin signing for future signatures.
+   * Applies proof data that enables zkLogin signing for future signatures.
    *
    * The supplied proof data is cloned before it is stored, and any supplied
    * `partialZkLoginSignature.addressSeed` is not stored. Mutating the input
@@ -360,17 +360,17 @@ export class ZKProofHandler {
   }
 
   /**
-  * Called from `signWithIntent` in the zkLogin enabled keypair/signer classes.
-  * This is how we end up with a zkLogin signature instead of a normal
+   * Called from `signWithIntent` in the zkLogin enabled keypair/signer classes.
+   * This is how we end up with a zkLogin signature instead of a normal
    * signature when the proof data is applied.
    * @param signatureWithBytes the normal signature with bytes
    *   that is returned from the underlying keypair/signer
-  * @returns a possibly modified SignatureWithBytes that includes a zkLogin
+   * @returns a possibly modified SignatureWithBytes that includes a zkLogin
    *   signature if the proof data is applied, or the original
    *   signatureWithBytes if not.
-  * Note that the bytes are not modified in either case, as the zkLogin signature
+   * Note that the bytes are not modified in either case, as the zkLogin signature
    * is generated in a way that it can be verified against the original bytes.
-  * This means that the zkLogin signature is essentially a wrapper around the
+   * This means that the zkLogin signature is essentially a wrapper around the
    * original signature that includes the proof data, and can be verified in a way
    * that extracts the original signature and checks it against the original bytes.
    * This can be seen in the keypair/signer tests where `parseZkLoginSignature` is used.

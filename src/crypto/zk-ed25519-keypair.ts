@@ -40,9 +40,9 @@ export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
   }
 
   /**
-  * Exports the current zkLogin data and ephemeral key
+   * Exports the current zkLogin data and ephemeral key
    * The intent is that this is used for testing the behaviour
-  * of expired zkLogin sessions.
+   * of expired zkLogin sessions.
    */
   toZKEd25519KeypairData(): ZKEd25519KeypairData {
     return {
