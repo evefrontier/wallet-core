@@ -1,0 +1,33 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/crypto/index.ts",
+    "src/definitions/index.ts",
+    "src/types/index.ts",
+    "src/utils/index.ts",
+    "src/wallet-standard-extensions/index.ts"
+  ],
+  "exclude": ["**/*.test.ts"],
+  "tsconfig": "./tsconfig.json",
+  "entryPointStrategy": "expand",
+  "out": "./docs/api",
+  "name": "@evefrontier/wallet-core",
+  "readme": "./README.md",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "excludeExternals": false,
+  "categoryOrder": ["Primary API", "Supporting Types and Utilities", "*"],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "sort": ["source-order"],
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": true
+  }
+}

@@ -10,6 +10,7 @@ import type { CreateZkLoginSignatureParams } from './zk-types'
  * `ZKSecp256r1Keypair`, or `ZKWebCryptoSigner`. This function remains
  * available for cases where a keypair instance is required but the class-based
  * API is not yet accessible.
+ * @category Supporting Types and Utilities
  */
 export function createZkLoginSignature({
   maxEpoch,

@@ -70,19 +70,19 @@ const keypair = new ZKSecp256r1Keypair()
 const keypair = await ZKWebCryptoSigner.generate()
 ```
 
-### Applying ZK Login proof data
+### Applying zkLogin proof data
 
-After creating a signer the public key can be obtained to perform the ZK Login
+After creating a signer the public key can be obtained to perform the zkLogin
 
 ```ts
 const publicKey = keypair.getPublicKey()
 ```
 
-Then when the partial ZK login signature, salt, max epoch, and JWT claim data
+Then when the partial zkLogin signature, salt, max epoch, and JWT claim data
 used for zkLogin address derivation are available, they can be applied to the
 keypair classes by using `applyZKProof`.
 
-`applyZKProof` switches the signer into ZK Login signing mode for future
+`applyZKProof` switches the signer into zkLogin signing mode for future
 `signWithIntent`, `signTransaction`, and `signPersonalMessage` calls. The
 applied proof data is cloned into the signer, and `getProofData()` also returns
 a copy, so mutating the original input or a returned proof-data object does not

@@ -6,7 +6,24 @@ import { withZKProofHandling } from './zk-common'
 const ZKEd25519KeypairBase = withZKProofHandling(Ed25519Keypair)
 
 /**
- * Keypair / Signer that can do ZKLogin base signing
+ * Drop-in replacement for Mysten Labs' `Ed25519Keypair` with zkLogin proof-aware signing support.
+ *
+ * This class keeps the same signing surface as `Ed25519Keypair` and adds proof-aware behavior
+ * through `applyZKProof`. Once you call `applyZKProof` with your ZK Login proof data, subsequent
+ * calls to `signWithIntent`, `signTransaction`, and `signPersonalMessage` will produce zkLogin signatures.
+ * Without proof data applied, it behaves identically to the underlying Mysten Labs class.
+ *
+ * @example
+ * ```ts
+ * const keypair = ZKEd25519Keypair.generate()
+ * const publicKey = keypair.getPublicKey()
+ *
+ * // Later, after obtaining ZK proof data:
+ * keypair.applyZKProof({ maxEpoch, userSalt, keyClaimName: 'sub', keyClaimValue: sub, aud, partialZkLoginSignature })
+ * const { signature } = await keypair.signTransaction(txBytes)
+ * ```
+ *
+ * @category Primary API
  */
 export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
   /**
@@ -23,9 +40,9 @@ export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
   }
 
   /**
-   * Exports the current ZK Login data and ephemeral key
+   * Exports the current zkLogin data and ephemeral key
    * The intent is that this is used for testing the behaviour
-   * of expired ZK Login sessions.
+   * of expired zkLogin sessions.
    */
   toZKEd25519KeypairData(): ZKEd25519KeypairData {
     return {
@@ -60,7 +77,7 @@ export class ZKEd25519Keypair extends ZKEd25519KeypairBase {
    * @throws error if the provided secret key is invalid and validation is not skipped.
    *
    * @param secretKey secret key as a byte array or Bech32 secret key string
-   * @param options: skip secret key validation
+   * @param options skip secret key validation
    */
   static fromSecretKey(
     secretKey: Uint8Array | string,

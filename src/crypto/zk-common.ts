@@ -11,12 +11,20 @@ import {
   isUnsignedDecimalIntegerStringBelow,
 } from '#src/utils/validation'
 
-type Constructor<TInstance = object> = abstract new (
+/**
+ * Constructor constraint used by `withZKProofHandling`.
+ * @category Supporting Types and Utilities
+ */
+export type Constructor<TInstance = object> = abstract new (
   // biome-ignore lint/suspicious/noExplicitAny: TypeScript mixin constructor constraints require any[].
   ...args: any[]
 ) => TInstance
 
-type IntentSigner = {
+/**
+ * Minimal signer contract expected by `withZKProofHandling`.
+ * @category Supporting Types and Utilities
+ */
+export type IntentSigner = {
   signWithIntent(
     bytes: Uint8Array,
     intent: IntentScope,
@@ -122,6 +130,7 @@ function cloneZKProofData(zkpd: ZKProofData): ZKProofData {
  * @param obj {unknown}
  * @returns true if `obj` includes properties with the same shape as a
  * PartialZkLoginSignature
+ * @category Supporting Types and Utilities
  */
 export function isPartialZKLoginSignature(
   obj: unknown,
@@ -137,11 +146,15 @@ export function isPartialZKLoginSignature(
   )
 }
 
-type ZKProofHandling = {
+/**
+ * Proof handling mixin contract exposed by `withZKProofHandling`.
+ * @category Supporting Types and Utilities
+ */
+export type ZKProofHandling = {
   zkProofHandler: ZKProofHandler
 
   /**
-   * Applies proof data that enables ZK Login signing for future signatures.
+   * Applies proof data that enables zkLogin signing for future signatures.
    *
    * The supplied proof data is cloned before it is stored, and any supplied
    * `partialZkLoginSignature.addressSeed` is not stored. Mutating the input
@@ -179,11 +192,12 @@ type ZKProofHandling = {
 }
 
 /**
- * Adds ZK proof-aware behavior to a signer class.
+ * Adds zkLogin proof-aware behavior to a signer class.
  *
  * The returned class keeps the original constructor arguments unchanged.
  * @param {TBase} Base
  * @returns {InstanceType<TBase> & ZKProofHandling}
+ * @category Supporting Types and Utilities
  */
 export function withZKProofHandling<TBase extends Constructor<IntentSigner>>(
   Base: TBase,
@@ -226,6 +240,10 @@ export function withZKProofHandling<TBase extends Constructor<IntentSigner>>(
   ) => InstanceType<TBase> & ZKProofHandling
 }
 
+/**
+ * Helper that stores zkLogin proof state and transforms signatures into zkLogin signatures.
+ * @category Supporting Types and Utilities
+ */
 export class ZKProofHandler {
   // proof data
   #data: ZKProofData = {
@@ -258,7 +276,7 @@ export class ZKProofHandler {
   }
 
   /**
-   * Applies proof data that enables ZK Login signing for future signatures.
+   * Applies proof data that enables zkLogin signing for future signatures.
    *
    * The supplied proof data is cloned before it is stored, and any supplied
    * `partialZkLoginSignature.addressSeed` is not stored. Mutating the input
@@ -342,17 +360,17 @@ export class ZKProofHandler {
   }
 
   /**
-   * Called from `signWithIntent` in the ZK enabled keypair/signer classes.
-   * This is how we end up with a ZK Login signature instead of a normal
+   * Called from `signWithIntent` in the zkLogin enabled keypair/signer classes.
+   * This is how we end up with a zkLogin signature instead of a normal
    * signature when the proof data is applied.
    * @param signatureWithBytes the normal signature with bytes
    *   that is returned from the underlying keypair/signer
-   * @returns a possibly modified SignatureWithBytes that includes a ZK Login
+   * @returns a possibly modified SignatureWithBytes that includes a zkLogin
    *   signature if the proof data is applied, or the original
    *   signatureWithBytes if not.
-   * Note that the bytes are not modified in either case, as the ZK Login signature
+   * Note that the bytes are not modified in either case, as the zkLogin signature
    * is generated in a way that it can be verified against the original bytes.
-   * This means that the ZK Login signature is essentially a wrapper around the
+   * This means that the zkLogin signature is essentially a wrapper around the
    * original signature that includes the proof data, and can be verified in a way
    * that extracts the original signature and checks it against the original bytes.
    * This can be seen in the keypair/signer tests where `parseZkLoginSignature` is used.

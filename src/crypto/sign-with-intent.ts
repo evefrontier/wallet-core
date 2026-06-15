@@ -1,5 +1,9 @@
 import type { IntentScope, Signer } from '@mysten/sui/cryptography'
 
+/**
+ * Parameters accepted by `signWithIntent`.
+ * @category Supporting Types and Utilities
+ */
 export interface RawSignParams {
   sui_address: string
   keypair: Signer
@@ -14,6 +18,7 @@ export interface RawSignParams {
  * call `signTransaction` or `signPersonalMessage` directly, or supply the
  * keypair to a Mysten Labs client class (gRPC, GraphQL, JSON-RPC) and use
  * `signAndExecuteTransaction`.
+ * @category Supporting Types and Utilities
  */
 export async function signWithIntent(
   messageBytes: Uint8Array,
