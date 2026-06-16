@@ -1,6 +1,6 @@
-import type { PartialZkLoginSignature } from '#src/types'
 import { isObjectRecord } from '#src/utils/validation'
 import { isPartialZKLoginSignature } from './zk-common'
+import type { PartialZkLoginSignature } from './zk-login'
 import type { ZkProofResponseLike } from './zk-types'
 
 /**

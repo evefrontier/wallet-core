@@ -44,6 +44,10 @@
  * ```
  */
 export { type RawSignParams, signWithIntent } from './sign-with-intent'
+export {
+  type BuildTransactionBytesOptions,
+  buildTransactionBytes,
+} from './transaction'
 export type {
   Constructor,
   IntentSigner,
@@ -54,7 +58,11 @@ export {
   withZKProofHandling,
   ZKProofHandler,
 } from './zk-common'
-export { ZKEd25519Keypair } from './zk-ed25519-keypair'
+export {
+  ZKEd25519Keypair,
+  type ZKEd25519KeypairData,
+} from './zk-ed25519-keypair'
+export type { PartialZkLoginSignature, ZKProofData } from './zk-login'
 export {
   getZkProofResponseErrorMessage,
   loadZkProof,

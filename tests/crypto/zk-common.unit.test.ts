@@ -6,11 +6,12 @@ import {
   getZkProofResponseErrorMessage,
   isPartialZKLoginSignature,
   loadZkProof,
+  type PartialZkLoginSignature,
   parseZkProofResponse,
   signWithIntent,
+  type ZKProofData,
   ZKProofHandler,
 } from '#src/crypto'
-import type { PartialZkLoginSignature, ZKProofData } from '#src/types'
 import {
   zkpdBase,
   zkpdBaseWithoutPartialSignature,

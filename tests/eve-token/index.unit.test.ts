@@ -1,21 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  ASSEMBLY_TYPE_API_STRING,
-  Assemblies,
-  DEFAULT_TENANT,
-  getAssemblyTypeApiString,
-  getEveCoinType,
-  isEveCoinType,
-  TenantId,
-} from '#src/definitions'
-
-const expectedAssemblyTypeApiString = {
-  [Assemblies.SmartStorageUnit]: 'storage-units',
-  [Assemblies.SmartTurret]: 'turrets',
-  [Assemblies.SmartGate]: 'gates',
-  [Assemblies.NetworkNode]: 'network-nodes',
-  [Assemblies.Assembly]: 'assemblies',
-} satisfies Record<Assemblies, string>
+import { getEveCoinType, isEveCoinType } from '#src/eve-token'
+import { TenantId } from '#src/tenant'
 
 const eveCoinTypePattern = /^0x[0-9a-f]{64}::EVE::EVE$/
 
@@ -36,21 +21,7 @@ const expectedEveCoinTypes = {
   [TenantId.STILLNESS]: expectedStillnessEveCoinType,
 } satisfies Record<TenantId, string>
 
-describe('definitions', () => {
-  it('should use Stillness as the default tenant', () => {
-    expect(DEFAULT_TENANT).toBe(TenantId.STILLNESS)
-  })
-
-  it('should map assembly types to API strings', () => {
-    expect(ASSEMBLY_TYPE_API_STRING).toEqual(expectedAssemblyTypeApiString)
-
-    for (const assembly of Object.values(Assemblies)) {
-      expect(getAssemblyTypeApiString(assembly)).toBe(
-        expectedAssemblyTypeApiString[assembly],
-      )
-    }
-  })
-
+describe('eve-token', () => {
   it('should build EVE coin types with an address and EVE type suffix', () => {
     for (const tenantId of Object.values(TenantId)) {
       expect(getEveCoinType(tenantId)).toMatch(eveCoinTypePattern)

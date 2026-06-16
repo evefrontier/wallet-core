@@ -46,20 +46,3 @@ export interface ZKProofData {
    */
   aud: string
 }
-
-/**
- * Serialized Ed25519 zkLogin keypair data.
- */
-export interface ZKEd25519KeypairData {
-  secretKey: Uint8Array | string
-  zkProofData: ZKProofData
-}
-
-/** Per-tenant config: EVE token package ID (Sui) and Datahub API host. v0.0.18
- * @category Constants
- */
-export interface TenantConfig {
-  packageId: string
-  evePackageId: string
-  datahubHost: string
-}

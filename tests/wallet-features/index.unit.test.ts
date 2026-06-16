@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EVEFRONTIER_SPONSORED_TRANSACTION } from '#src/wallet-standard-extensions'
+import { EVEFRONTIER_SPONSORED_TRANSACTION } from '#src/wallet-features'
 
 describe('wallet-standard-extensions', () => {
   it('should export the sponsored transaction feature identifier', () => {
