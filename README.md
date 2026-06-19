@@ -203,9 +203,3 @@ If needed, validate consumption in the consumer project with TypeScript:
 ```bash
 npx tsc --noEmit
 ```
-
-## Notes
-
-- Add to ZKProofData maxEpochTimestampMs: number
-  evevault has this for refreshing zklogin
-  see getCurrentEpochFromRpc getCurrentEpochFromGraphQL for details (in evevault)
