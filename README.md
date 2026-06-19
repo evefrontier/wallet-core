@@ -45,9 +45,8 @@ Supported package subpath exports:
 Example imports:
 
 ```ts
-import { ZKEd25519Keypair } from '@evefrontier/wallet-core/crypto'
-import { SponsoredTransactionActions } from '@evefrontier/wallet-core/definitions'
-import type { ZKProofData } from '@evefrontier/wallet-core/types'
+import { ZKEd25519Keypair, type ZKProofData } from '@evefrontier/wallet-core/crypto'
+import { SponsoredTransactionActions } from '@evefrontier/wallet-core/sponsored-transaction'
 ```
 
 Keypair signers available are:
@@ -82,6 +81,17 @@ const publicKey = keypair.getPublicKey()
 Then when the partial zkLogin signature, salt, max epoch, and JWT claim data
 used for zkLogin address derivation are available, they can be applied to the
 keypair classes by using `applyZKProof`.
+
+```ts
+keyPair.applyZKProof({
+  maxEpoch,
+  partialZkLoginSignature,
+  userSalt,
+  keyClaimName: 'sub',
+  keyClaimValue: tokenClaimSub,
+  aud: tokenClaimAud,
+})
+```
 
 `applyZKProof` switches the signer into zkLogin signing mode for future
 `signWithIntent`, `signTransaction`, and `signPersonalMessage` calls. The
