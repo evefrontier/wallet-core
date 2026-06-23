@@ -18,7 +18,10 @@ const expectedEveCoinTypes = {
     '0x6407060579895a8b30f7d30d2447046eb80ecc23f0c9acde09222b2a505583c9::EVE::EVE',
   [TenantId.UTOPIA]:
     '0xf0446b93345c1118f21239d7ac58fb82d005219b2016e100f074e4d17162a465::EVE::EVE',
+  [TenantId.UMBRA]:
+    '0xf0446b93345c1118f21239d7ac58fb82d005219b2016e100f074e4d17162a465::EVE::EVE',
   [TenantId.STILLNESS]: expectedStillnessEveCoinType,
+  [TenantId.LIMINALITY]: expectedStillnessEveCoinType,
 } satisfies Record<TenantId, string>
 
 describe('eve-token', () => {
