@@ -3,7 +3,9 @@
  */
 export enum TenantId {
   STILLNESS = 'stillness',
+  LIMINALITY = 'liminality',
   UTOPIA = 'utopia',
+  UMBRA = 'umbra',
   TAUCETI = 'tauceti',
   TIAKI = 'tiaki',
   TETRA = 'tetra',
@@ -64,12 +66,26 @@ export const TENANT_CONFIG: Record<TenantId, TenantConfig> = {
       '0xf0446b93345c1118f21239d7ac58fb82d005219b2016e100f074e4d17162a465',
     datahubHost: 'world-api-utopia.uat.priv.evefrontier.com',
   },
+  [TenantId.UMBRA]: {
+    packageId:
+      '0xd12a70c74c1e759445d6f209b01d43d860e97fcf2ef72ccbbd00afd828043f75',
+    evePackageId:
+      '0xf0446b93345c1118f21239d7ac58fb82d005219b2016e100f074e4d17162a465',
+    datahubHost: 'world-api-umbra.uat.priv.evefrontier.com',
+  },
   [TenantId.STILLNESS]: {
     packageId:
       '0x28b497559d65ab320d9da4613bf2498d5946b2c0ae3597ccfda3072ce127448c',
     evePackageId:
       '0x2a66a89b5a735738ffa4423ac024d23571326163f324f9051557617319e59d60',
     datahubHost: 'world-api-stillness.live.pub.evefrontier.com',
+  },
+  [TenantId.LIMINALITY]: {
+    packageId:
+      '0x28b497559d65ab320d9da4613bf2498d5946b2c0ae3597ccfda3072ce127448c',
+    evePackageId:
+      '0x2a66a89b5a735738ffa4423ac024d23571326163f324f9051557617319e59d60',
+    datahubHost: 'world-api-liminality.live.pub.evefrontier.com',
   },
 }
 
