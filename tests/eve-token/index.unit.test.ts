@@ -5,7 +5,7 @@ import { TenantId } from '#src/tenant'
 const eveCoinTypePattern = /^0x[0-9a-f]{64}::EVE::EVE$/
 
 const expectedStillnessEveCoinType =
-  '0x2a66a89b5a735738ffa4423ac024d23571326163f324f9051557617319e59d60::EVE::EVE'
+  '0xac361aa5ceb726bd974f885c9dea9e55dc9bc98fa1f5731c5965a810707bf0b8::EVE::EVE'
 
 const expectedEveCoinTypes = {
   [TenantId.TAUCETI]:
