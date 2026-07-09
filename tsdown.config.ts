@@ -2,6 +2,7 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: {
+    'address-alias/index': 'src/address-alias/index.ts',
     'crypto/index': 'src/crypto/index.ts',
     'eve-token/index': 'src/eve-token/index.ts',
     'sponsored-transaction/index': 'src/sponsored-transaction/index.ts',

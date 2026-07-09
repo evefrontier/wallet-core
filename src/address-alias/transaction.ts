@@ -1,0 +1,166 @@
+import type { ClientWithCoreApi } from '@mysten/sui/client'
+import { Transaction } from '@mysten/sui/transactions'
+import {
+  ADDRESS_ALIAS_GAS_BUDGET,
+  ADDRESS_ALIAS_MODULE,
+  ADDRESS_ALIAS_STATE,
+} from './config'
+
+/**
+ * Anything able to sign BCS transaction bytes — the Mysten `Signer` base class
+ * (including `ZKEd25519Keypair` and the other zkLogin signers from the
+ * `./crypto` entrypoint) satisfies this shape.
+ */
+export interface TransactionBytesSigner {
+  signTransaction(bytes: Uint8Array): Promise<{ signature: string }>
+}
+
+export type ExecuteAddressAliasTransactionParams = {
+  suiClient: ClientWithCoreApi
+  /** The alias owner's address; set as the transaction sender. */
+  sender: string
+  signer: TransactionBytesSigner
+  /** Builds the transaction bytes for the specific address alias action. */
+  buildBytes: (
+    sender: string,
+    suiClient: ClientWithCoreApi,
+  ) => Promise<Uint8Array>
+}
+
+/**
+ * Assembles an address alias PTB: runs the caller's command(s), then sets the
+ * sender and gas budget. Every address alias transaction shares this tail.
+ */
+function newAddressAliasTx(
+  sender: string,
+  addCommands: (tx: Transaction) => void,
+): Transaction {
+  const tx = new Transaction()
+  addCommands(tx)
+  tx.setSender(sender)
+  tx.setGasBudget(ADDRESS_ALIAS_GAS_BUDGET)
+  return tx
+}
+
+async function buildAddressAliasTx(
+  tx: Transaction,
+  suiClient: ClientWithCoreApi,
+): Promise<Uint8Array> {
+  const txb = await tx.build({ client: suiClient })
+  return new Uint8Array(txb)
+}
+
+/**
+ * Enable address alias configuration for the sender. Creates the caller's
+ * `AddressAliases` object; `enable` transfers the minted object to the caller
+ * internally.
+ */
+export function enableAddressAliasTx(sender: string): Transaction {
+  return newAddressAliasTx(sender, (tx) => {
+    tx.moveCall({
+      target: `${ADDRESS_ALIAS_MODULE}::enable`,
+      arguments: [tx.object(ADDRESS_ALIAS_STATE)],
+    })
+  })
+}
+
+/** BCS bytes variant of {@link enableAddressAliasTx}. */
+export function enableAddressAliasTxBytes(
+  sender: string,
+  suiClient: ClientWithCoreApi,
+): Promise<Uint8Array> {
+  return buildAddressAliasTx(enableAddressAliasTx(sender), suiClient)
+}
+
+/**
+ * Add a new address alias to the caller's `AddressAliases` object.
+ *
+ * @param aliasesObjectId the caller's AddressAliases object id (from the read path)
+ * @param addressAlias the address to add as an alias
+ */
+export function addAddressAliasTx(
+  sender: string,
+  aliasesObjectId: string,
+  addressAlias: string,
+): Transaction {
+  return newAddressAliasTx(sender, (tx) => {
+    tx.moveCall({
+      target: `${ADDRESS_ALIAS_MODULE}::add`,
+      arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
+    })
+  })
+}
+
+/** BCS bytes variant of {@link addAddressAliasTx}. */
+export function addAddressAliasTxBytes(
+  sender: string,
+  aliasesObjectId: string,
+  addressAlias: string,
+  suiClient: ClientWithCoreApi,
+): Promise<Uint8Array> {
+  return buildAddressAliasTx(
+    addAddressAliasTx(sender, aliasesObjectId, addressAlias),
+    suiClient,
+  )
+}
+
+/**
+ * Removes an address alias from the caller's `AddressAliases` object.
+ *
+ * @param aliasesObjectId the caller's AddressAliases object id (from the read path)
+ * @param addressAlias the address alias to remove
+ */
+export function removeAddressAliasTx(
+  sender: string,
+  aliasesObjectId: string,
+  addressAlias: string,
+): Transaction {
+  return newAddressAliasTx(sender, (tx) => {
+    tx.moveCall({
+      target: `${ADDRESS_ALIAS_MODULE}::remove`,
+      arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
+    })
+  })
+}
+
+/** BCS bytes variant of {@link removeAddressAliasTx}. */
+export function removeAddressAliasTxBytes(
+  sender: string,
+  aliasesObjectId: string,
+  addressAlias: string,
+  suiClient: ClientWithCoreApi,
+): Promise<Uint8Array> {
+  return buildAddressAliasTx(
+    removeAddressAliasTx(sender, aliasesObjectId, addressAlias),
+    suiClient,
+  )
+}
+
+/**
+ * Signs and executes an address alias PTB, returning the transaction digest.
+ *
+ * Build bytes → sign → execute via the client's core API. Throws when the
+ * transaction fails on chain.
+ */
+export async function executeAddressAliasTx({
+  suiClient,
+  sender,
+  signer,
+  buildBytes,
+}: ExecuteAddressAliasTransactionParams): Promise<string> {
+  const txBytes = await buildBytes(sender, suiClient)
+  const { signature } = await signer.signTransaction(txBytes)
+
+  const result = await suiClient.core.executeTransaction({
+    transaction: txBytes,
+    signatures: [signature],
+  })
+
+  if (result.$kind === 'FailedTransaction') {
+    throw new Error(
+      `Address alias transaction failed: ${result.FailedTransaction.digest}`,
+    )
+  }
+
+  return result.Transaction.digest
+}

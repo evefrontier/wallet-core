@@ -1,11 +1,16 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
   "type": "module",
   "exports": {
+    "./address-alias": {
+      "types": "./dist/address-alias/index.d.mts",
+      "import": "./dist/address-alias/index.mjs",
+      "default": "./dist/address-alias/index.mjs"
+    },
     "./crypto": {
       "types": "./dist/crypto/index.d.mts",
       "import": "./dist/crypto/index.mjs",
