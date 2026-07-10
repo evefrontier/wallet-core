@@ -1,9 +1,9 @@
 import type { ClientWithCoreApi } from '@mysten/sui/client'
 import { Transaction } from '@mysten/sui/transactions'
 import {
-  ADDRESS_ALIAS_GAS_BUDGET,
   ADDRESS_ALIAS_MODULE,
   ADDRESS_ALIAS_STATE,
+  DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
 } from './config'
 
 /**
@@ -34,11 +34,12 @@ export type ExecuteAddressAliasTransactionParams = {
 function newAddressAliasTx(
   sender: string,
   addCommands: (tx: Transaction) => void,
+  gasBudget: number = DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
 ): Transaction {
   const tx = new Transaction()
   addCommands(tx)
   tx.setSender(sender)
-  tx.setGasBudget(ADDRESS_ALIAS_GAS_BUDGET)
+  tx.setGasBudget(gasBudget)
   return tx
 }
 
@@ -54,22 +55,32 @@ async function buildAddressAliasTx(
  * Enable address alias configuration for the sender. Creates the caller's
  * `AddressAliases` object; `enable` transfers the minted object to the caller
  * internally.
+ *
+ * @param gasBudget overrides {@link DEFAULT_ADDRESS_ALIAS_GAS_BUDGET}
  */
-export function enableAddressAliasTx(sender: string): Transaction {
-  return newAddressAliasTx(sender, (tx) => {
-    tx.moveCall({
-      target: `${ADDRESS_ALIAS_MODULE}::enable`,
-      arguments: [tx.object(ADDRESS_ALIAS_STATE)],
-    })
-  })
+export function enableAddressAliasTx(
+  sender: string,
+  gasBudget?: number,
+): Transaction {
+  return newAddressAliasTx(
+    sender,
+    (tx) => {
+      tx.moveCall({
+        target: `${ADDRESS_ALIAS_MODULE}::enable`,
+        arguments: [tx.object(ADDRESS_ALIAS_STATE)],
+      })
+    },
+    gasBudget,
+  )
 }
 
 /** BCS bytes variant of {@link enableAddressAliasTx}. */
 export function enableAddressAliasTxBytes(
   sender: string,
   suiClient: ClientWithCoreApi,
+  gasBudget?: number,
 ): Promise<Uint8Array> {
-  return buildAddressAliasTx(enableAddressAliasTx(sender), suiClient)
+  return buildAddressAliasTx(enableAddressAliasTx(sender, gasBudget), suiClient)
 }
 
 /**
@@ -77,18 +88,24 @@ export function enableAddressAliasTxBytes(
  *
  * @param aliasesObjectId the caller's AddressAliases object id (from the read path)
  * @param addressAlias the address to add as an alias
+ * @param gasBudget overrides {@link DEFAULT_ADDRESS_ALIAS_GAS_BUDGET}
  */
 export function addAddressAliasTx(
   sender: string,
   aliasesObjectId: string,
   addressAlias: string,
+  gasBudget?: number,
 ): Transaction {
-  return newAddressAliasTx(sender, (tx) => {
-    tx.moveCall({
-      target: `${ADDRESS_ALIAS_MODULE}::add`,
-      arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
-    })
-  })
+  return newAddressAliasTx(
+    sender,
+    (tx) => {
+      tx.moveCall({
+        target: `${ADDRESS_ALIAS_MODULE}::add`,
+        arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
+      })
+    },
+    gasBudget,
+  )
 }
 
 /** BCS bytes variant of {@link addAddressAliasTx}. */
@@ -97,9 +114,10 @@ export function addAddressAliasTxBytes(
   aliasesObjectId: string,
   addressAlias: string,
   suiClient: ClientWithCoreApi,
+  gasBudget?: number,
 ): Promise<Uint8Array> {
   return buildAddressAliasTx(
-    addAddressAliasTx(sender, aliasesObjectId, addressAlias),
+    addAddressAliasTx(sender, aliasesObjectId, addressAlias, gasBudget),
     suiClient,
   )
 }
@@ -109,18 +127,24 @@ export function addAddressAliasTxBytes(
  *
  * @param aliasesObjectId the caller's AddressAliases object id (from the read path)
  * @param addressAlias the address alias to remove
+ * @param gasBudget overrides {@link DEFAULT_ADDRESS_ALIAS_GAS_BUDGET}
  */
 export function removeAddressAliasTx(
   sender: string,
   aliasesObjectId: string,
   addressAlias: string,
+  gasBudget?: number,
 ): Transaction {
-  return newAddressAliasTx(sender, (tx) => {
-    tx.moveCall({
-      target: `${ADDRESS_ALIAS_MODULE}::remove`,
-      arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
-    })
-  })
+  return newAddressAliasTx(
+    sender,
+    (tx) => {
+      tx.moveCall({
+        target: `${ADDRESS_ALIAS_MODULE}::remove`,
+        arguments: [tx.object(aliasesObjectId), tx.pure.address(addressAlias)],
+      })
+    },
+    gasBudget,
+  )
 }
 
 /** BCS bytes variant of {@link removeAddressAliasTx}. */
@@ -129,9 +153,10 @@ export function removeAddressAliasTxBytes(
   aliasesObjectId: string,
   addressAlias: string,
   suiClient: ClientWithCoreApi,
+  gasBudget?: number,
 ): Promise<Uint8Array> {
   return buildAddressAliasTx(
-    removeAddressAliasTx(sender, aliasesObjectId, addressAlias),
+    removeAddressAliasTx(sender, aliasesObjectId, addressAlias, gasBudget),
     suiClient,
   )
 }

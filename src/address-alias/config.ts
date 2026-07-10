@@ -1,6 +1,9 @@
 /**
  * Address alias configuration (`sui::address_alias`).
  *
+ * @experimental This module's API has not been architecturally agreed on and
+ * may change or be removed without a major version bump.
+ *
  * Docs: https://docs.sui.io/develop/transactions/transaction-auth/address-aliases
  */
 
@@ -16,7 +19,11 @@ export const ADDRESS_ALIASES_TYPE = '0x2::address_alias::AddressAliases'
 /** Maximum number of address aliases a single address may register. */
 export const MAX_ADDRESS_ALIASES = 8
 
-export const ADDRESS_ALIAS_GAS_BUDGET = 50_000_000
+/**
+ * Default gas budget for address alias transactions. Each transaction builder
+ * accepts an optional `gasBudget` parameter to override it.
+ */
+export const DEFAULT_ADDRESS_ALIAS_GAS_BUDGET = 50_000_000
 
 /** Result of reading the caller's `AddressAliases` owned object. */
 export interface AddressAliasesInfo {

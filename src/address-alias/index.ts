@@ -3,6 +3,11 @@
  *
  * Helpers for Sui address aliases (`0x2::address_alias`).
  *
+ * @experimental This entry point has not been architecturally agreed on by
+ * the team yet. The API surface may change or be removed in any release
+ * without a major version bump — do not build on it without checking in
+ * first.
+ *
  * An address alias is another Sui address authorized to sign transactions for
  * your address — effectively a co-owner with full access. For zkLogin
  * accounts this is the key-continuity primitive: the zkLogin-derived address
@@ -58,11 +63,11 @@
  * ```
  */
 export {
-  ADDRESS_ALIAS_GAS_BUDGET,
   ADDRESS_ALIAS_MODULE,
   ADDRESS_ALIAS_STATE,
   ADDRESS_ALIASES_TYPE,
   type AddressAliasesInfo,
+  DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
   MAX_ADDRESS_ALIASES,
 } from './config'
 export { getAddressAliases, parseAddressAliases } from './query'

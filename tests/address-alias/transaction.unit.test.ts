@@ -2,10 +2,10 @@ import { Transaction } from '@mysten/sui/transactions'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  ADDRESS_ALIAS_GAS_BUDGET,
   ADDRESS_ALIAS_STATE,
   addAddressAliasTx,
   addAddressAliasTxBytes,
+  DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
   enableAddressAliasTx,
   executeAddressAliasTx,
   removeAddressAliasTx,
@@ -40,7 +40,13 @@ describe('enableAddressAliasTx', () => {
       normalizeSuiAddress(ADDRESS_ALIAS_STATE),
     )
     expect(data.sender).toBe(SENDER)
-    expect(data.gasData.budget).toBe(String(ADDRESS_ALIAS_GAS_BUDGET))
+    expect(data.gasData.budget).toBe(String(DEFAULT_ADDRESS_ALIAS_GAS_BUDGET))
+  })
+
+  it('should use the gas budget override when provided', () => {
+    const tx = enableAddressAliasTx(SENDER, 123_456)
+
+    expect(tx.getData().gasData.budget).toBe(String(123_456))
   })
 })
 
@@ -55,7 +61,13 @@ describe('addAddressAliasTx', () => {
     expect(data.inputs[0]?.UnresolvedObject?.objectId).toBe(ALIASES_OBJECT_ID)
     expect(data.inputs[1]?.Pure).toBeDefined()
     expect(data.sender).toBe(SENDER)
-    expect(data.gasData.budget).toBe(String(ADDRESS_ALIAS_GAS_BUDGET))
+    expect(data.gasData.budget).toBe(String(DEFAULT_ADDRESS_ALIAS_GAS_BUDGET))
+  })
+
+  it('should use the gas budget override when provided', () => {
+    const tx = addAddressAliasTx(SENDER, ALIASES_OBJECT_ID, ALIAS, 123_456)
+
+    expect(tx.getData().gasData.budget).toBe(String(123_456))
   })
 })
 
