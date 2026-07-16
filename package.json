@@ -16,6 +16,11 @@
       "import": "./dist/crypto/index.mjs",
       "default": "./dist/crypto/index.mjs"
     },
+    "./epoch": {
+      "types": "./dist/epoch/index.d.mts",
+      "import": "./dist/epoch/index.mjs",
+      "default": "./dist/epoch/index.mjs"
+    },
     "./eve-token": {
       "types": "./dist/eve-token/index.d.mts",
       "import": "./dist/eve-token/index.mjs",

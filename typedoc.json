@@ -3,6 +3,7 @@
   "entryPoints": [
     "src/address-alias/index.ts",
     "src/crypto/index.ts",
+    "src/epoch/index.ts",
     "src/eve-token/index.ts",
     "src/sponsored-transaction/index.ts",
     "src/tenant/index.ts",
