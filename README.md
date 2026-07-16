@@ -37,6 +37,7 @@ Supported package subpath exports:
 - @evefrontier/wallet-core/jwt
 - @evefrontier/wallet-core/sponsored-transaction
 - @evefrontier/wallet-core/tenant
+- @evefrontier/wallet-core/transaction
 - @evefrontier/wallet-core/utils
 - @evefrontier/wallet-core/wallet-features
 
