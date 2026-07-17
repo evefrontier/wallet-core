@@ -21,6 +21,7 @@
  *
  * ```ts
  * import { parseTransactionBytes } from '@evefrontier/wallet-core/transaction'
+ * import { Transaction } from '@mysten/sui/transactions'
  *
  * const { displayValue, reviewValue, transactionForSigning } =
  *   await parseTransactionBytes(pendingTransaction)
