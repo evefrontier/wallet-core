@@ -41,6 +41,13 @@ export type EpochManagerErrorCallback = (
   context: 'renewal-callback' | 'epoch-changed-callback' | 'transition-refresh',
 ) => void
 
+/** Largest delay `setTimeout` honors (2^31 - 1 ms); longer waits are chunked. */
+const MAX_TIMEOUT_DELAY_MS = 2_147_483_647
+
+function toNonNegativeInt(value: number, fallback: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : fallback
+}
+
 export interface EpochManagerInitializeOptions {
   /**
    * Fetches current-epoch facts from chain — typically one of the fetchers
@@ -119,16 +126,17 @@ export class EpochManager {
   }: EpochManagerInitializeOptions): Promise<EpochState> {
     this.config = {
       fetchEpoch,
-      epochsFromCurrent: Math.max(0, Math.floor(epochsFromCurrent)),
-      ...(typeof absoluteMaxEpoch === 'number'
+      epochsFromCurrent: toNonNegativeInt(epochsFromCurrent, 0),
+      ...(typeof absoluteMaxEpoch === 'number' &&
+      Number.isFinite(absoluteMaxEpoch)
         ? { absoluteMaxEpoch: Math.floor(absoluteMaxEpoch) }
         : {}),
-      renewBeforeMs: Math.max(0, renewBeforeMs),
+      renewBeforeMs: toNonNegativeInt(renewBeforeMs, DEFAULT_RENEW_BEFORE_MS),
       ...(onRenewalDue ? { onRenewalDue } : {}),
       ...(onEpochChanged ? { onEpochChanged } : {}),
       ...(onError ? { onError } : {}),
       watchEpochTransitions,
-      epochTransitionBufferMs: Math.max(0, epochTransitionBufferMs),
+      epochTransitionBufferMs: toNonNegativeInt(epochTransitionBufferMs, 2_000),
       nowMs,
     }
 
@@ -163,7 +171,10 @@ export class EpochManager {
     const { config } = this.requireInitialized()
 
     if (typeof epochsFromCurrent === 'number') {
-      config.epochsFromCurrent = Math.max(0, Math.floor(epochsFromCurrent))
+      config.epochsFromCurrent = toNonNegativeInt(
+        epochsFromCurrent,
+        config.epochsFromCurrent,
+      )
     }
 
     return this.refreshFromChain({ triggerEpochChangedCallback: false })
@@ -209,6 +220,35 @@ export class EpochManager {
     this.config?.onError?.(error, context)
   }
 
+  /**
+   * Schedules `onFire` at `targetMs`, chunking waits longer than
+   * {@link MAX_TIMEOUT_DELAY_MS} into successive timeouts so `setTimeout`'s
+   * 32-bit delay clamp cannot make far-future timers fire immediately.
+   */
+  protected startTimerAt(
+    targetMs: number,
+    timerKey: 'renewalTimer' | 'epochTransitionTimer',
+    onFire: () => void,
+  ): void {
+    const { config } = this.requireInitialized()
+
+    const tick = () => {
+      const remaining = targetMs - config.nowMs()
+      if (remaining <= MAX_TIMEOUT_DELAY_MS) {
+        this[timerKey] = setTimeout(
+          () => {
+            this[timerKey] = null
+            onFire()
+          },
+          Math.max(0, remaining),
+        )
+      } else {
+        this[timerKey] = setTimeout(tick, MAX_TIMEOUT_DELAY_MS)
+      }
+    }
+    tick()
+  }
+
   protected scheduleRenewalTimer(): void {
     const { config, state } = this.requireInitialized()
 
@@ -220,8 +260,7 @@ export class EpochManager {
       return
     }
 
-    const delay = Math.max(0, state.renewAtTimestampMs - config.nowMs())
-    this.renewalTimer = setTimeout(() => {
+    this.startTimerAt(state.renewAtTimestampMs, 'renewalTimer', () => {
       const latest = this.getState()
       void Promise.resolve(
         config.onRenewalDue?.({
@@ -232,7 +271,7 @@ export class EpochManager {
       ).catch((error) => {
         this.reportError(error, 'renewal-callback')
       })
-    }, delay)
+    })
   }
 
   protected scheduleEpochTransitionTimer(): void {
@@ -246,17 +285,27 @@ export class EpochManager {
       return
     }
 
-    const transitionAt =
+    // A stale boundary (e.g. a fetcher that fell back to epoch start 0) would
+    // otherwise schedule a 0ms refresh that reschedules another 0ms refresh,
+    // hammering the endpoint. Roll past boundaries forward one epoch duration
+    // at a time so the watcher keeps its normal cadence instead.
+    const now = config.nowMs()
+    const epochDurationMs = Math.max(1, state.epochDurationMs)
+    let transitionAt =
       state.nextEpochTimestampMs + config.epochTransitionBufferMs
-    const delay = Math.max(0, transitionAt - config.nowMs())
+    if (transitionAt <= now) {
+      const missedEpochs =
+        Math.floor((now - transitionAt) / epochDurationMs) + 1
+      transitionAt += missedEpochs * epochDurationMs
+    }
 
-    this.epochTransitionTimer = setTimeout(() => {
+    this.startTimerAt(transitionAt, 'epochTransitionTimer', () => {
       void this.refreshFromChain({ triggerEpochChangedCallback: true }).catch(
         (error) => {
           this.reportError(error, 'transition-refresh')
         },
       )
-    }, delay)
+    })
   }
 
   protected async refreshFromChain({
@@ -280,6 +329,13 @@ export class EpochManager {
       renewBeforeMs: config.renewBeforeMs,
       nowMs: config.nowMs(),
     })
+
+    // If reset() or a newer initialize() replaced the config while the fetch
+    // was in flight, that configuration now owns state and timers — return
+    // the computed snapshot without applying anything.
+    if (this.config !== config) {
+      return updatedState
+    }
 
     this.state = updatedState
     this.scheduleRenewalTimer()

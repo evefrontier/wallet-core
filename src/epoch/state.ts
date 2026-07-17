@@ -1,17 +1,10 @@
 /**
- * Fallback epoch duration (24 hours) used when a chain response does not
- * include one.
- */
-export const DEFAULT_EPOCH_DURATION_MS = 86_400_000
-
-/**
  * Default lead time before `maxEpochTimestampMs` at which a renewal is due.
  */
 export const DEFAULT_RENEW_BEFORE_MS = 60_000
 
 /**
- * Current-epoch facts fetched from chain. All fetchers in `./fetch` return
- * this shape so `computeEpochState` callers are transport-agnostic.
+ * Current-epoch facts fetched from chain.
  */
 export interface ChainEpochInfo {
   /** The chain's current epoch number. */
@@ -76,16 +69,24 @@ export function computeEpochState(
   options: ComputeEpochStateOptions,
 ): EpochState {
   const { currentEpoch, epochDurationMs, epochStartTimestampMs } = info
-  const {
-    absoluteMaxEpoch,
-    renewBeforeMs = DEFAULT_RENEW_BEFORE_MS,
-    nowMs,
-  } = options
+  const { absoluteMaxEpoch, nowMs } = options
 
-  const epochsFromCurrent = Math.max(0, Math.floor(options.epochsFromCurrent))
+  if (!Number.isFinite(nowMs)) {
+    throw new Error('computeEpochState requires a finite nowMs timestamp')
+  }
+
+  const renewBeforeMs =
+    options.renewBeforeMs != null && Number.isFinite(options.renewBeforeMs)
+      ? Math.max(0, options.renewBeforeMs)
+      : DEFAULT_RENEW_BEFORE_MS
+  const epochsFromCurrent = Number.isFinite(options.epochsFromCurrent)
+    ? Math.max(0, Math.floor(options.epochsFromCurrent))
+    : 0
+  // maxEpoch below the current epoch is already expired; clamp so derived
+  // timestamps never run backwards.
   const numericMaxEpoch =
-    typeof absoluteMaxEpoch === 'number'
-      ? Math.floor(absoluteMaxEpoch)
+    typeof absoluteMaxEpoch === 'number' && Number.isFinite(absoluteMaxEpoch)
+      ? Math.max(currentEpoch, Math.floor(absoluteMaxEpoch))
       : currentEpoch + epochsFromCurrent
   const resolvedEpochsFromCurrent = numericMaxEpoch - currentEpoch
   const nextEpochTimestampMs = epochStartTimestampMs + epochDurationMs
@@ -93,7 +94,7 @@ export function computeEpochState(
     epochStartTimestampMs + epochDurationMs * (resolvedEpochsFromCurrent + 1)
   const renewAtTimestampMs = Math.max(
     epochStartTimestampMs,
-    maxEpochTimestampMs - Math.max(0, renewBeforeMs),
+    maxEpochTimestampMs - renewBeforeMs,
   )
 
   return {

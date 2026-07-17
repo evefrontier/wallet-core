@@ -95,6 +95,58 @@ describe('computeEpochState', () => {
     expect(state.msUntilMaxEpoch).toBe(state.maxEpochTimestampMs - now)
   })
 
+  it('should treat a non-finite offset as zero', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: Number.NaN,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.numericMaxEpoch).toBe(100)
+    expect(state.maxEpochTimestampMs).toBe(EPOCH_START + DURATION)
+  })
+
+  it('should clamp absoluteMaxEpoch to at least the current epoch', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 2,
+      absoluteMaxEpoch: 42,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.numericMaxEpoch).toBe(100)
+    expect(state.epochsFromCurrent).toBe(0)
+  })
+
+  it('should ignore a non-finite absoluteMaxEpoch', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 2,
+      absoluteMaxEpoch: Number.NaN,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.numericMaxEpoch).toBe(102)
+  })
+
+  it('should fall back to the default lead time for a non-finite renewBeforeMs', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewBeforeMs: Number.NaN,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - DEFAULT_RENEW_BEFORE_MS,
+    )
+  })
+
+  it('should throw when nowMs is not finite', () => {
+    expect(() =>
+      computeEpochState(INFO, {
+        epochsFromCurrent: 0,
+        nowMs: Number.NaN,
+      }),
+    ).toThrow('computeEpochState requires a finite nowMs timestamp')
+  })
+
   it('should normalize a negative or fractional offset', () => {
     const negative = computeEpochState(INFO, {
       epochsFromCurrent: -3,

@@ -19,15 +19,14 @@
  *
  * - `computeEpochState`, the pure timing derivation, and its
  *   `ChainEpochInfo` input / `EpochState` output models
- * - `fetchEpochFromSystemState` / `fetchEpochFromGraphQL` /
- *   `fetchEpochFromLedger`, transport-specific fetchers that all return
- *   `ChainEpochInfo`
+ * - `fetchEpochFromSystemState`, which reads current-epoch facts from the
+ *   system state object and returns `ChainEpochInfo`
  * - `EpochManager`, a scheduler that emits a callback when a session renewal
  *   is due and optionally watches epoch transitions
  *
- * Chain-facing helpers accept an injected client (`ClientWithCoreApi`,
- * `SuiGraphQLClient`, or `SuiGrpcClient`); this module never constructs
- * clients or resolves fullnode URLs.
+ * `fetchEpochFromSystemState` accepts an injected client
+ * (`ClientWithCoreApi`); this module never constructs clients or resolves
+ * fullnode URLs.
  *
  * ### Quick example
  *
@@ -54,12 +53,7 @@
  * })
  * ```
  */
-export {
-  CURRENT_EPOCH_QUERY,
-  fetchEpochFromGraphQL,
-  fetchEpochFromLedger,
-  fetchEpochFromSystemState,
-} from './fetch'
+export { fetchEpochFromSystemState } from './fetch'
 export {
   type EpochChangedCallback,
   type EpochChangedNotification,
@@ -73,7 +67,6 @@ export {
   type ChainEpochInfo,
   type ComputeEpochStateOptions,
   computeEpochState,
-  DEFAULT_EPOCH_DURATION_MS,
   DEFAULT_RENEW_BEFORE_MS,
   type EpochState,
 } from './state'
