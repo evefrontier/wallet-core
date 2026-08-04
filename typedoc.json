@@ -5,6 +5,7 @@
     "src/crypto/index.ts",
     "src/epoch/index.ts",
     "src/eve-token/index.ts",
+    "src/jwt/index.ts",
     "src/sponsored-transaction/index.ts",
     "src/tenant/index.ts",
     "src/utils/index.ts",

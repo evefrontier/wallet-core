@@ -26,6 +26,11 @@
       "import": "./dist/eve-token/index.mjs",
       "default": "./dist/eve-token/index.mjs"
     },
+    "./jwt": {
+      "types": "./dist/jwt/index.d.mts",
+      "import": "./dist/jwt/index.mjs",
+      "default": "./dist/jwt/index.mjs"
+    },
     "./sponsored-transaction": {
       "types": "./dist/sponsored-transaction/index.d.mts",
       "import": "./dist/sponsored-transaction/index.mjs",
