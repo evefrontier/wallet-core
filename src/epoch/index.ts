@@ -68,5 +68,6 @@ export {
   type ComputeEpochStateOptions,
   computeEpochState,
   DEFAULT_RENEW_BEFORE_MS,
+  DEFAULT_RENEW_JITTER_MS,
   type EpochState,
 } from './state'

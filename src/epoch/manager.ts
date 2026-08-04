@@ -2,6 +2,7 @@ import {
   type ChainEpochInfo,
   computeEpochState,
   DEFAULT_RENEW_BEFORE_MS,
+  DEFAULT_RENEW_JITTER_MS,
   type EpochState,
 } from './state'
 
@@ -48,6 +49,13 @@ function toNonNegativeInt(value: number, fallback: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : fallback
 }
 
+/** Coerce a randomness draw to a usable jitter fraction in `[0, 1)`. */
+function toJitterFraction(value: number): number {
+  return Number.isFinite(value)
+    ? Math.min(0.999_999_999, Math.max(0, value))
+    : 0
+}
+
 export interface EpochManagerInitializeOptions {
   /**
    * Fetches current-epoch facts from chain — typically one of the fetchers
@@ -64,6 +72,15 @@ export interface EpochManagerInitializeOptions {
   absoluteMaxEpoch?: number
   /** Renewal lead time before `maxEpochTimestampMs`. Defaults to {@link DEFAULT_RENEW_BEFORE_MS}. */
   renewBeforeMs?: number
+  /**
+   * Width of the renewal staggering window. Each manager instance renews at a
+   * random offset within `[0, renewJitterMs]` before its usual `renewBeforeMs`
+   * deadline, so many wallets sharing an epoch boundary don't renew at once.
+   * Defaults to {@link DEFAULT_RENEW_JITTER_MS}; pass 0 to disable.
+   */
+  renewJitterMs?: number
+  /** Randomness source for the per-client jitter offset. Defaults to `Math.random`. */
+  random?: () => number
   onRenewalDue?: EpochRenewalCallback
   onEpochChanged?: EpochChangedCallback
   onError?: EpochManagerErrorCallback
@@ -80,6 +97,9 @@ interface EpochManagerConfig {
   epochsFromCurrent: number
   absoluteMaxEpoch?: number
   renewBeforeMs: number
+  renewJitterMs: number
+  /** Per-instance jitter offset in `[0, 1)`, drawn once at initialize. */
+  renewJitterFraction: number
   onRenewalDue?: EpochRenewalCallback
   onEpochChanged?: EpochChangedCallback
   onError?: EpochManagerErrorCallback
@@ -117,6 +137,8 @@ export class EpochManager {
     epochsFromCurrent,
     absoluteMaxEpoch,
     renewBeforeMs = DEFAULT_RENEW_BEFORE_MS,
+    renewJitterMs = DEFAULT_RENEW_JITTER_MS,
+    random = () => Math.random(),
     onRenewalDue,
     onEpochChanged,
     onError,
@@ -132,6 +154,8 @@ export class EpochManager {
         ? { absoluteMaxEpoch: Math.floor(absoluteMaxEpoch) }
         : {}),
       renewBeforeMs: toNonNegativeInt(renewBeforeMs, DEFAULT_RENEW_BEFORE_MS),
+      renewJitterMs: toNonNegativeInt(renewJitterMs, DEFAULT_RENEW_JITTER_MS),
+      renewJitterFraction: toJitterFraction(random()),
       ...(onRenewalDue ? { onRenewalDue } : {}),
       ...(onEpochChanged ? { onEpochChanged } : {}),
       ...(onError ? { onError } : {}),
@@ -327,6 +351,8 @@ export class EpochManager {
         ? { absoluteMaxEpoch: config.absoluteMaxEpoch }
         : {}),
       renewBeforeMs: config.renewBeforeMs,
+      renewJitterMs: config.renewJitterMs,
+      renewJitterFraction: config.renewJitterFraction,
       nowMs: config.nowMs(),
     })
 

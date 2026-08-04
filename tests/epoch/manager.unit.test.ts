@@ -152,6 +152,8 @@ describe('EpochManager', () => {
       fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
       epochsFromCurrent: Number.NaN,
       renewBeforeMs: Number.NaN,
+      // Isolate the renewBeforeMs fallback from staggering.
+      renewJitterMs: 0,
       epochTransitionBufferMs: Number.NaN,
       absoluteMaxEpoch: Number.NaN,
       onRenewalDue,
@@ -180,6 +182,8 @@ describe('EpochManager', () => {
         .mockResolvedValue(chainInfo({ epochDurationMs: longDuration })),
       epochsFromCurrent: 0,
       renewBeforeMs: 60_000,
+      // Isolate the setTimeout-clamp chunking from staggering.
+      renewJitterMs: 0,
       onRenewalDue,
       watchEpochTransitions: false,
     })
@@ -275,6 +279,63 @@ describe('EpochManager', () => {
     await firstInit
 
     expect(manager.getState().currentEpoch).toBe(200)
+    manager.reset()
+  })
+
+  it('should stagger renewal by a jitter drawn from the injected random source', async () => {
+    const manager = new EpochManager()
+    const state = await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 0,
+      renewBeforeMs: 60_000,
+      renewJitterMs: 300_000,
+      random: () => 0.5,
+      watchEpochTransitions: false,
+    })
+
+    expect(state.appliedRenewJitterMs).toBe(150_000)
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - 60_000 - 150_000,
+    )
+    manager.reset()
+  })
+
+  it('should give instances with different seeds different renewal slots', async () => {
+    const opts = {
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      watchEpochTransitions: false,
+    } as const
+
+    const early = new EpochManager()
+    const late = new EpochManager()
+    const earlyState = await early.initialize({ ...opts, random: () => 0.9 })
+    const lateState = await late.initialize({ ...opts, random: () => 0.1 })
+
+    expect(earlyState.renewAtTimestampMs).toBeLessThan(
+      lateState.renewAtTimestampMs,
+    )
+    early.reset()
+    late.reset()
+  })
+
+  it('should keep the same renewal slot across refreshes within an epoch', async () => {
+    const manager = new EpochManager()
+    const random = vi.fn().mockReturnValue(0.5)
+    const first = await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      random,
+      watchEpochTransitions: false,
+    })
+
+    const second = await manager.refresh()
+
+    // The jitter offset is drawn once, not re-rolled on every refresh.
+    expect(random).toHaveBeenCalledTimes(1)
+    expect(second.renewAtTimestampMs).toBe(first.renewAtTimestampMs)
     manager.reset()
   })
 

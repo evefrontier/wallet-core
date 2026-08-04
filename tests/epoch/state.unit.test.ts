@@ -64,6 +64,90 @@ describe('computeEpochState', () => {
     )
   })
 
+  it('should default to no jitter', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.appliedRenewJitterMs).toBe(0)
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - DEFAULT_RENEW_BEFORE_MS,
+    )
+  })
+
+  it('should subtract the full jitter window at fraction 1', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      renewJitterFraction: 1,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.appliedRenewJitterMs).toBe(300_000)
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - DEFAULT_RENEW_BEFORE_MS - 300_000,
+    )
+  })
+
+  it('should scale the jitter by the fraction', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      renewJitterFraction: 0.25,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.appliedRenewJitterMs).toBe(75_000)
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - DEFAULT_RENEW_BEFORE_MS - 75_000,
+    )
+  })
+
+  it('should clamp the jitter fraction into [0, 1]', () => {
+    const below = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      renewJitterFraction: -5,
+      nowMs: EPOCH_START,
+    })
+    expect(below.appliedRenewJitterMs).toBe(0)
+
+    const above = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewJitterMs: 300_000,
+      renewJitterFraction: 5,
+      nowMs: EPOCH_START,
+    })
+    expect(above.appliedRenewJitterMs).toBe(300_000)
+  })
+
+  it('should ignore a non-finite jitter window', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewJitterMs: Number.NaN,
+      renewJitterFraction: 1,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.appliedRenewJitterMs).toBe(0)
+    expect(state.renewAtTimestampMs).toBe(
+      EPOCH_START + DURATION - DEFAULT_RENEW_BEFORE_MS,
+    )
+  })
+
+  it('should clamp a jittered renewal back to the epoch start', () => {
+    const state = computeEpochState(INFO, {
+      epochsFromCurrent: 0,
+      renewBeforeMs: DURATION / 2,
+      renewJitterMs: DURATION,
+      renewJitterFraction: 1,
+      nowMs: EPOCH_START,
+    })
+
+    expect(state.renewAtTimestampMs).toBe(EPOCH_START)
+  })
+
   it('should clamp renewAtTimestampMs to the epoch start', () => {
     const state = computeEpochState(INFO, {
       epochsFromCurrent: 0,
