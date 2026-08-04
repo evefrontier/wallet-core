@@ -55,7 +55,8 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     const result = await fetchUnsignedSponsoredTransaction(INPUT, context)
 
     expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' })
-    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
       'https://gateway.example/transactions/sponsored/storage-units/online',
       {
         method: 'POST',
@@ -153,7 +154,8 @@ describe('executeSponsoredTransaction', () => {
     const result = await executeSponsoredTransaction(PARAMS, context)
 
     expect(result).toEqual({ digest: '0xabc', effects: 'ZWZm' })
-    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
       'https://gateway.example/transactions/sponsored/execute',
       expect.objectContaining({
         method: 'POST',
