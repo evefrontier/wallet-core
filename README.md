@@ -33,6 +33,7 @@ Supported package subpath exports:
 
 - @evefrontier/wallet-core/crypto
 - @evefrontier/wallet-core/eve-token
+- @evefrontier/wallet-core/jwt
 - @evefrontier/wallet-core/sponsored-transaction
 - @evefrontier/wallet-core/tenant
 - @evefrontier/wallet-core/utils
