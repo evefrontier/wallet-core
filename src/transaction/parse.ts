@@ -58,9 +58,9 @@ export async function parseTransactionBytes(
     : parseTransactionObject(transaction)
 }
 
-const parseTransactionObject = (
+function parseTransactionObject(
   transaction: Record<string, unknown>,
-): ParseTransactionBytesResult => {
+): ParseTransactionBytesResult {
   try {
     return toDisplayResult(
       transaction,
@@ -79,7 +79,7 @@ const parseTransactionObject = (
 }
 
 /** Best-effort pretty-print for objects JSON.stringify rejects (bigint, cycles). */
-const safeStringify = (value: unknown): string => {
+function safeStringify(value: unknown): string {
   const seen = new WeakSet<object>()
   return JSON.stringify(
     value,
@@ -95,9 +95,9 @@ const safeStringify = (value: unknown): string => {
   )
 }
 
-const parseTransactionString = async (
+async function parseTransactionString(
   transaction: string,
-): Promise<ParseTransactionBytesResult> => {
+): Promise<ParseTransactionBytesResult> {
   const trimmed = transaction.trim()
   // A comma signals the deprecated comma-separated byte format; base64 never contains one.
   const parser = trimmed.includes(',')
@@ -113,10 +113,10 @@ const parseTransactionString = async (
   return parsed ? { ...result, reviewValue: parsed.value } : result
 }
 
-const parseCommaSeparatedBytes = async (
+async function parseCommaSeparatedBytes(
   trimmed: string,
   original: string,
-): Promise<ParseTransactionBytesResult> => {
+): Promise<ParseTransactionBytesResult> {
   try {
     const bytes = new Uint8Array(trimmed.split(',').map(parseByteValue))
     return toDisplayResult(await bytesToReviewValue(bytes), toBase64(bytes))
@@ -125,10 +125,10 @@ const parseCommaSeparatedBytes = async (
   }
 }
 
-const parseBase64Bytes = async (
+async function parseBase64Bytes(
   trimmed: string,
   original: string,
-): Promise<ParseTransactionBytesResult> => {
+): Promise<ParseTransactionBytesResult> {
   try {
     return toDisplayResult(
       await bytesToReviewValue(fromBase64(trimmed)),
@@ -139,7 +139,7 @@ const parseBase64Bytes = async (
   }
 }
 
-const parseByteValue = (value: string): number => {
+function parseByteValue(value: string): number {
   const trimmed = value.trim()
   // Number('') is 0, so empty segments (e.g. from "1,2,3,") must be rejected explicitly
   if (trimmed === '') {
