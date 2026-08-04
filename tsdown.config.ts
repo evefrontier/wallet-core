@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     'address-alias/index': 'src/address-alias/index.ts',
     'crypto/index': 'src/crypto/index.ts',
+    'epoch/index': 'src/epoch/index.ts',
     'eve-token/index': 'src/eve-token/index.ts',
     'jwt/index': 'src/jwt/index.ts',
     'sponsored-transaction/index': 'src/sponsored-transaction/index.ts',

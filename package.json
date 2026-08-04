@@ -16,6 +16,11 @@
       "import": "./dist/crypto/index.mjs",
       "default": "./dist/crypto/index.mjs"
     },
+    "./epoch": {
+      "types": "./dist/epoch/index.d.mts",
+      "import": "./dist/epoch/index.mjs",
+      "default": "./dist/epoch/index.mjs"
+    },
     "./eve-token": {
       "types": "./dist/eve-token/index.d.mts",
       "import": "./dist/eve-token/index.mjs",
@@ -66,15 +71,15 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
-    "@vitest/browser-playwright": "^4.1.9",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
-    "playwright": "^1.61.0",
-    "tsdown": "^0.22.3",
-    "typedoc": "^0.28.19",
+    "playwright": "^1.62.1",
+    "tsdown": "^0.22.14",
+    "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "scripts": {
     "clean": "rm -rf ./dist ./docs",
@@ -108,8 +113,12 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@mysten/sui": "^2.19.0",
+    "@mysten/sui": "^2.23.1",
     "@mysten/webcrypto-signer": "^0.1.2",
     "@mysten/wallet-standard": "^0.20.3"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "postcss": "^8.5.23"
   }
 }
