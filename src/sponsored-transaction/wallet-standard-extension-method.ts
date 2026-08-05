@@ -11,7 +11,7 @@ export interface SponsoredTransactionMetadata {
 
 export type SponsoredTransactionInput = {
   txAction: SponsoredTransactionActions
-  assembly: number
+  assembly: string // uint64 decimal string, preserves ids > 2^53
   assemblyType: SponsoredTransactionAssemblyType
   metadata?: SponsoredTransactionMetadata
 }
