@@ -41,6 +41,11 @@
       "import": "./dist/tenant/index.mjs",
       "default": "./dist/tenant/index.mjs"
     },
+    "./transaction": {
+      "types": "./dist/transaction/index.d.mts",
+      "import": "./dist/transaction/index.mjs",
+      "default": "./dist/transaction/index.mjs"
+    },
     "./utils": {
       "types": "./dist/utils/index.d.mts",
       "import": "./dist/utils/index.mjs",

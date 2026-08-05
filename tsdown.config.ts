@@ -9,6 +9,7 @@ export default defineConfig({
     'jwt/index': 'src/jwt/index.ts',
     'sponsored-transaction/index': 'src/sponsored-transaction/index.ts',
     'tenant/index': 'src/tenant/index.ts',
+    'transaction/index': 'src/transaction/index.ts',
     'utils/index': 'src/utils/index.ts',
     'wallet-features/index': 'src/wallet-features/index.ts',
   },
