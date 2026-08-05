@@ -1,3 +1,8 @@
+import type {
+  SponsoredTransactionActions,
+  SponsoredTransactionAssemblyType,
+} from './assemblies'
+
 export interface SponsoredTransactionMetadata {
   name?: string
   description?: string
@@ -5,19 +10,19 @@ export interface SponsoredTransactionMetadata {
 }
 
 export type SponsoredTransactionInput = {
-  txAction: string
+  txAction: SponsoredTransactionActions
   assembly: number
-  assemblyType: string
+  assemblyType: SponsoredTransactionAssemblyType
   metadata?: SponsoredTransactionMetadata
 }
 
 export type SponsoredTransactionOutput = {
   /** The transaction digest */
   digest: string
-  /** The transaction effects (BCS encoded) */
-  effects: string
-  /** Raw effects bytes (if available) */
-  rawEffects?: number[]
+  /** On-chain execution status reported by the gateway (e.g. `success`). */
+  executionStatus: string
+  /** Error message when the on-chain execution failed; absent on success. */
+  executionErrorMessage?: string
 }
 
 export type SponsoredTransactionMethod = (

@@ -45,6 +45,7 @@
 export {
   type ApiContext,
   type ApiTier,
+  EVE_API_HOST_TEMPLATE,
   type GetApiContextOptions,
   getApiContext,
   resolveEveTier,

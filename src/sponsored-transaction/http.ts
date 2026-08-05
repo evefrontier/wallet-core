@@ -1,12 +1,28 @@
+import { decodeEveClaims } from '#src/jwt'
 import { isNonEmptyString, isObjectRecord } from '#src/utils'
+import {
+  ASSEMBLY_TYPE_API_STRING,
+  SponsoredTransactionActions,
+} from './assemblies'
 import type {
   SponsoredTransactionInput,
   SponsoredTransactionOutput,
 } from './wallet-standard-extension-method'
 
+/** Gateway `executionStatus` value for an on-chain success (vs `'failure'`). */
+const EXECUTION_STATUS_SUCCESS = 'success'
+
+const VALID_ASSEMBLY_TYPES = new Set<string>(
+  Object.values(ASSEMBLY_TYPE_API_STRING),
+)
+const VALID_TX_ACTIONS = new Set<string>(
+  Object.values(SponsoredTransactionActions),
+)
+
 /** Failure modes of the sponsored transaction API calls. */
 export type SponsoredTransactionErrorCode =
   | 'fetch_failed'
+  | 'invalid_input'
   | 'invalid_shape'
   | 'execute_failed'
 
@@ -46,12 +62,30 @@ export class SponsoredTransactionError extends Error {
 export interface SponsoredTransactionApiContext {
   /** Resolves a gateway-relative path (e.g. `transactions/sponsored/execute`) to a full URL. */
   getApiGatewayUrl: (path: string) => string
-  /** Returns the bearer token for the `Authorization` header. */
+  /** Returns the bearer token; its `tenant` claim also sets the `X-Tenant` header. */
   getApiGatewayToken: () => string
-  /** Tenant identifier sent as the `X-Tenant` header. */
-  tenant: string
   /** Fetch override for tests or non-global fetch environments. Defaults to `globalThis.fetch`. */
   fetch?: typeof globalThis.fetch
+}
+
+/** Reads the `X-Tenant` value from the gateway token's `tenant` claim. */
+function resolveTenant(token: string): string {
+  let tenant = ''
+  try {
+    tenant = decodeEveClaims(token).tenant
+  } catch {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      'API gateway token is not a decodable JWT',
+    )
+  }
+  if (!tenant) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      'API gateway token has no tenant claim',
+    )
+  }
+  return tenant
 }
 
 /** An unsigned sponsored transaction prepared by the gateway. */
@@ -68,14 +102,15 @@ async function postJson(
   context: SponsoredTransactionApiContext,
 ): Promise<{ response: Response; raw: unknown }> {
   const doFetch = context.fetch ?? globalThis.fetch
+  const token = context.getApiGatewayToken()
   const response = await doFetch(context.getApiGatewayUrl(path), {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
       Accept: 'application/json, application/problem+json',
-      'X-Tenant': context.tenant,
+      'X-Tenant': resolveTenant(token),
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${context.getApiGatewayToken()}`,
+      Authorization: `Bearer ${token}`,
     },
   })
 
@@ -103,14 +138,31 @@ export async function fetchUnsignedSponsoredTransaction(
   input: SponsoredTransactionInput,
   context: SponsoredTransactionApiContext,
 ): Promise<UnsignedSponsoredTransaction> {
-  const path = `transactions/sponsored/${encodeURIComponent(
+  // Guard against unknown values before hitting the gateway (types don't
+  // constrain JS callers or dynamically-built inputs), so a typo fails here
+  // rather than as a 404 from an unroutable path.
+  if (!VALID_ASSEMBLY_TYPES.has(input.assemblyType)) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Unknown assembly type: ${input.assemblyType}`,
+    )
+  }
+  if (!VALID_TX_ACTIONS.has(input.txAction)) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Unknown transaction action: ${input.txAction}`,
+    )
+  }
+
+  const path = `v2/transactions/sponsored/${encodeURIComponent(
     input.assemblyType,
   )}/${encodeURIComponent(input.txAction)}`
 
   const { response, raw } = await postJson(
     path,
     {
-      assemblyId: input.assembly,
+      // Gateway wants a decimal string (^[1-9][0-9]*$); a number 400s.
+      assemblyId: String(input.assembly),
       name: input.metadata?.name,
       description: input.metadata?.description,
       url: input.metadata?.url,
@@ -176,8 +228,30 @@ export async function executeSponsoredTransaction(
   }
 
   const result = isObjectRecord(raw) ? raw : {}
+  const digest = isNonEmptyString(result.digest) ? result.digest : '0x0'
+  const executionStatus = isNonEmptyString(result.executionStatus)
+    ? result.executionStatus
+    : ''
+  const executionErrorMessage = isNonEmptyString(result.executionErrorMessage)
+    ? result.executionErrorMessage
+    : undefined
+
+  // A 2xx means submitted, not executed: on-chain execution can still fail,
+  // so a non-success executionStatus is an error, not a successful digest.
+  if (executionStatus !== EXECUTION_STATUS_SUCCESS) {
+    throw new SponsoredTransactionError(
+      'execute_failed',
+      executionErrorMessage ??
+        `Sponsored transaction execution did not succeed (executionStatus: ${
+          executionStatus || 'unknown'
+        })`,
+      { httpStatus: response.status, raw },
+    )
+  }
+
   return {
-    digest: isNonEmptyString(result.digest) ? result.digest : '0x0',
-    effects: isNonEmptyString(result.effects) ? result.effects : '0x0',
+    digest,
+    executionStatus,
+    ...(executionErrorMessage !== undefined ? { executionErrorMessage } : {}),
   }
 }
