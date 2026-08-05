@@ -12,8 +12,9 @@
  * - `SponsoredTransactionMethod`, the wallet-facing method signature
  * - `fetchUnsignedSponsoredTransaction` / `executeSponsoredTransaction`, the
  *   API gateway calls implementing the prepare → sign → execute flow. The
- *   gateway connection (URL formation, bearer token, tenant) is supplied by
- *   the caller via `SponsoredTransactionApiContext`; failures throw
+ *   gateway connection (URL formation, bearer token) is supplied by the
+ *   caller via `SponsoredTransactionApiContext`, and the `X-Tenant` header is
+ *   read from the token's `tenant` claim; failures throw
  *   `SponsoredTransactionError` for consumers to map to their own error
  *   surface.
  *

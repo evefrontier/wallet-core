@@ -7,6 +7,7 @@ import {
   SponsoredTransactionError,
   type SponsoredTransactionInput,
 } from '#src/sponsored-transaction'
+import { tokenWithPayload } from '../jwt/test-tokens'
 
 const INPUT: SponsoredTransactionInput = {
   txAction: SponsoredTransactionActions.BRING_ONLINE,
@@ -14,6 +15,9 @@ const INPUT: SponsoredTransactionInput = {
   assemblyType: 'storage-units',
   metadata: { name: 'My SSU', description: 'desc', url: 'https://x.example' },
 }
+
+/** Gateway token whose `tenant` claim drives the `X-Tenant` header. */
+const TOKEN = tokenWithPayload({ tenant: 'stillness' })
 
 function jsonResponse(
   body: unknown,
@@ -31,7 +35,10 @@ function jsonResponse(
   } as unknown as Response
 }
 
-function contextWithResponse(response: Response): {
+function contextWithResponse(
+  response: Response,
+  token: string = TOKEN,
+): {
   context: SponsoredTransactionApiContext
   fetchMock: ReturnType<typeof vi.fn>
 } {
@@ -39,8 +46,7 @@ function contextWithResponse(response: Response): {
   return {
     context: {
       getApiGatewayUrl: (path: string) => `https://gateway.example/${path}`,
-      getApiGatewayToken: () => 'token-123',
-      tenant: 'stillness',
+      getApiGatewayToken: () => token,
       fetch: fetchMock as unknown as typeof globalThis.fetch,
     },
     fetchMock,
@@ -71,7 +77,7 @@ describe('fetchUnsignedSponsoredTransaction', () => {
           Accept: 'application/json, application/problem+json',
           'X-Tenant': 'stillness',
           'Content-Type': 'application/json',
-          Authorization: 'Bearer token-123',
+          Authorization: `Bearer ${TOKEN}`,
         },
       },
     )
@@ -102,6 +108,18 @@ describe('fetchUnsignedSponsoredTransaction', () => {
         { ...INPUT, txAction: 'x y' as never },
         context,
       ),
+    ).rejects.toMatchObject({ code: 'invalid_input' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('should throw invalid_input without calling fetch when the token has no tenant claim', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+      tokenWithPayload({ sub: 'user-1' }),
+    )
+
+    await expect(
+      fetchUnsignedSponsoredTransaction(INPUT, context),
     ).rejects.toMatchObject({ code: 'invalid_input' })
     expect(fetchMock).not.toHaveBeenCalled()
   })

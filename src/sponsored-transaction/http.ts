@@ -1,3 +1,4 @@
+import { decodeEveClaims } from '#src/jwt'
 import { isNonEmptyString, isObjectRecord } from '#src/utils'
 import {
   ASSEMBLY_TYPE_API_STRING,
@@ -61,12 +62,30 @@ export class SponsoredTransactionError extends Error {
 export interface SponsoredTransactionApiContext {
   /** Resolves a gateway-relative path (e.g. `transactions/sponsored/execute`) to a full URL. */
   getApiGatewayUrl: (path: string) => string
-  /** Returns the bearer token for the `Authorization` header. */
+  /** Returns the bearer token; its `tenant` claim also sets the `X-Tenant` header. */
   getApiGatewayToken: () => string
-  /** Tenant identifier sent as the `X-Tenant` header. */
-  tenant: string
   /** Fetch override for tests or non-global fetch environments. Defaults to `globalThis.fetch`. */
   fetch?: typeof globalThis.fetch
+}
+
+/** Reads the `X-Tenant` value from the gateway token's `tenant` claim. */
+function resolveTenant(token: string): string {
+  let tenant = ''
+  try {
+    tenant = decodeEveClaims(token).tenant
+  } catch {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      'API gateway token is not a decodable JWT',
+    )
+  }
+  if (!tenant) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      'API gateway token has no tenant claim',
+    )
+  }
+  return tenant
 }
 
 /** An unsigned sponsored transaction prepared by the gateway. */
@@ -83,14 +102,15 @@ async function postJson(
   context: SponsoredTransactionApiContext,
 ): Promise<{ response: Response; raw: unknown }> {
   const doFetch = context.fetch ?? globalThis.fetch
+  const token = context.getApiGatewayToken()
   const response = await doFetch(context.getApiGatewayUrl(path), {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
       Accept: 'application/json, application/problem+json',
-      'X-Tenant': context.tenant,
+      'X-Tenant': resolveTenant(token),
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${context.getApiGatewayToken()}`,
+      Authorization: `Bearer ${token}`,
     },
   })
 
