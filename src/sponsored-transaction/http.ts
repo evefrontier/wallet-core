@@ -4,6 +4,9 @@ import type {
   SponsoredTransactionOutput,
 } from './wallet-standard-extension-method'
 
+/** Gateway `executionStatus` value for an on-chain success (vs `'failure'`). */
+const EXECUTION_STATUS_SUCCESS = 'success'
+
 /** Failure modes of the sponsored transaction API calls. */
 export type SponsoredTransactionErrorCode =
   | 'fetch_failed'
@@ -103,14 +106,15 @@ export async function fetchUnsignedSponsoredTransaction(
   input: SponsoredTransactionInput,
   context: SponsoredTransactionApiContext,
 ): Promise<UnsignedSponsoredTransaction> {
-  const path = `transactions/sponsored/${encodeURIComponent(
+  const path = `v2/transactions/sponsored/${encodeURIComponent(
     input.assemblyType,
   )}/${encodeURIComponent(input.txAction)}`
 
   const { response, raw } = await postJson(
     path,
     {
-      assemblyId: input.assembly,
+      // Gateway wants a decimal string (^[1-9][0-9]*$); a number 400s.
+      assemblyId: String(input.assembly),
       name: input.metadata?.name,
       description: input.metadata?.description,
       url: input.metadata?.url,
@@ -176,8 +180,30 @@ export async function executeSponsoredTransaction(
   }
 
   const result = isObjectRecord(raw) ? raw : {}
+  const digest = isNonEmptyString(result.digest) ? result.digest : '0x0'
+  const executionStatus = isNonEmptyString(result.executionStatus)
+    ? result.executionStatus
+    : ''
+  const executionErrorMessage = isNonEmptyString(result.executionErrorMessage)
+    ? result.executionErrorMessage
+    : undefined
+
+  // A 2xx means submitted, not executed: on-chain execution can still fail,
+  // so a non-success executionStatus is an error, not a successful digest.
+  if (executionStatus !== EXECUTION_STATUS_SUCCESS) {
+    throw new SponsoredTransactionError(
+      'execute_failed',
+      executionErrorMessage ??
+        `Sponsored transaction execution did not succeed (executionStatus: ${
+          executionStatus || 'unknown'
+        })`,
+      { httpStatus: response.status, raw },
+    )
+  }
+
   return {
-    digest: isNonEmptyString(result.digest) ? result.digest : '0x0',
-    effects: isNonEmptyString(result.effects) ? result.effects : '0x0',
+    digest,
+    executionStatus,
+    ...(executionErrorMessage !== undefined ? { executionErrorMessage } : {}),
   }
 }

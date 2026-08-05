@@ -57,11 +57,11 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://gateway.example/transactions/sponsored/storage-units/online',
+      'https://gateway.example/v2/transactions/sponsored/storage-units/online',
       {
         method: 'POST',
         body: JSON.stringify({
-          assemblyId: 42,
+          assemblyId: '42',
           name: 'My SSU',
           description: 'desc',
           url: 'https://x.example',
@@ -87,7 +87,7 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     )
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://gateway.example/transactions/sponsored/a%2Fb/x%20y',
+      'https://gateway.example/v2/transactions/sponsored/a%2Fb/x%20y',
       expect.anything(),
     )
   })
@@ -146,14 +146,14 @@ describe('fetchUnsignedSponsoredTransaction', () => {
 describe('executeSponsoredTransaction', () => {
   const PARAMS = { preparationId: 'prep-1', userSignatureB64Bytes: 'c2ln' }
 
-  it('should POST the signature to the execute endpoint and return digest/effects', async () => {
+  it('should POST the signature to the execute endpoint and return the digest and status', async () => {
     const { context, fetchMock } = contextWithResponse(
-      jsonResponse({ digest: '0xabc', effects: 'ZWZm' }),
+      jsonResponse({ digest: '0xabc', executionStatus: 'success' }),
     )
 
     const result = await executeSponsoredTransaction(PARAMS, context)
 
-    expect(result).toEqual({ digest: '0xabc', effects: 'ZWZm' })
+    expect(result).toEqual({ digest: '0xabc', executionStatus: 'success' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith(
       'https://gateway.example/transactions/sponsored/execute',
@@ -164,12 +164,26 @@ describe('executeSponsoredTransaction', () => {
     )
   })
 
-  it('should default missing digest/effects fields', async () => {
-    const { context } = contextWithResponse(jsonResponse({}))
-
-    await expect(executeSponsoredTransaction(PARAMS, context)).resolves.toEqual(
-      { digest: '0x0', effects: '0x0' },
+  it('should throw execute_failed when the tx executed on-chain but did not succeed', async () => {
+    const { context } = contextWithResponse(
+      jsonResponse({
+        digest: '0xabc',
+        executionStatus: 'failure',
+        executionErrorMessage: 'MoveAbort',
+      }),
     )
+
+    await expect(
+      executeSponsoredTransaction(PARAMS, context),
+    ).rejects.toMatchObject({ code: 'execute_failed', message: 'MoveAbort' })
+  })
+
+  it('should throw execute_failed when a 2xx response omits executionStatus', async () => {
+    const { context } = contextWithResponse(jsonResponse({ digest: '0xabc' }))
+
+    await expect(
+      executeSponsoredTransaction(PARAMS, context),
+    ).rejects.toMatchObject({ code: 'execute_failed', httpStatus: 200 })
   })
 
   it('should throw execute_failed with status and body on non-OK responses', async () => {
