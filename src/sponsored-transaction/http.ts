@@ -1,4 +1,8 @@
 import { isNonEmptyString, isObjectRecord } from '#src/utils'
+import {
+  ASSEMBLY_TYPE_API_STRING,
+  SponsoredTransactionActions,
+} from './assemblies'
 import type {
   SponsoredTransactionInput,
   SponsoredTransactionOutput,
@@ -7,9 +11,17 @@ import type {
 /** Gateway `executionStatus` value for an on-chain success (vs `'failure'`). */
 const EXECUTION_STATUS_SUCCESS = 'success'
 
+const VALID_ASSEMBLY_TYPES = new Set<string>(
+  Object.values(ASSEMBLY_TYPE_API_STRING),
+)
+const VALID_TX_ACTIONS = new Set<string>(
+  Object.values(SponsoredTransactionActions),
+)
+
 /** Failure modes of the sponsored transaction API calls. */
 export type SponsoredTransactionErrorCode =
   | 'fetch_failed'
+  | 'invalid_input'
   | 'invalid_shape'
   | 'execute_failed'
 
@@ -106,6 +118,22 @@ export async function fetchUnsignedSponsoredTransaction(
   input: SponsoredTransactionInput,
   context: SponsoredTransactionApiContext,
 ): Promise<UnsignedSponsoredTransaction> {
+  // Guard against unknown values before hitting the gateway (types don't
+  // constrain JS callers or dynamically-built inputs), so a typo fails here
+  // rather than as a 404 from an unroutable path.
+  if (!VALID_ASSEMBLY_TYPES.has(input.assemblyType)) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Unknown assembly type: ${input.assemblyType}`,
+    )
+  }
+  if (!VALID_TX_ACTIONS.has(input.txAction)) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Unknown transaction action: ${input.txAction}`,
+    )
+  }
+
   const path = `v2/transactions/sponsored/${encodeURIComponent(
     input.assemblyType,
   )}/${encodeURIComponent(input.txAction)}`

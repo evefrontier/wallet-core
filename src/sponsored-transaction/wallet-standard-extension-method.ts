@@ -1,3 +1,8 @@
+import type {
+  SponsoredTransactionActions,
+  SponsoredTransactionAssemblyType,
+} from './assemblies'
+
 export interface SponsoredTransactionMetadata {
   name?: string
   description?: string
@@ -5,9 +10,9 @@ export interface SponsoredTransactionMetadata {
 }
 
 export type SponsoredTransactionInput = {
-  txAction: string
+  txAction: SponsoredTransactionActions
   assembly: number
-  assemblyType: string
+  assemblyType: SponsoredTransactionAssemblyType
   metadata?: SponsoredTransactionMetadata
 }
 

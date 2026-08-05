@@ -2,13 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   executeSponsoredTransaction,
   fetchUnsignedSponsoredTransaction,
+  SponsoredTransactionActions,
   type SponsoredTransactionApiContext,
   SponsoredTransactionError,
   type SponsoredTransactionInput,
 } from '#src/sponsored-transaction'
 
 const INPUT: SponsoredTransactionInput = {
-  txAction: 'online',
+  txAction: SponsoredTransactionActions.BRING_ONLINE,
   assembly: 42,
   assemblyType: 'storage-units',
   metadata: { name: 'My SSU', description: 'desc', url: 'https://x.example' },
@@ -76,20 +77,33 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     )
   })
 
-  it('should URL-encode path segments', async () => {
+  it('should throw invalid_input without calling fetch on an unknown assembly type', async () => {
     const { context, fetchMock } = contextWithResponse(
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
-    await fetchUnsignedSponsoredTransaction(
-      { ...INPUT, assemblyType: 'a/b', txAction: 'x y' },
-      context,
+    await expect(
+      fetchUnsignedSponsoredTransaction(
+        // Bypass the type to exercise the runtime guard for JS callers.
+        { ...INPUT, assemblyType: 'bogus' as never },
+        context,
+      ),
+    ).rejects.toMatchObject({ code: 'invalid_input' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('should throw invalid_input without calling fetch on an unknown action', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://gateway.example/v2/transactions/sponsored/a%2Fb/x%20y',
-      expect.anything(),
-    )
+    await expect(
+      fetchUnsignedSponsoredTransaction(
+        { ...INPUT, txAction: 'x y' as never },
+        context,
+      ),
+    ).rejects.toMatchObject({ code: 'invalid_input' })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('should throw fetch_failed with status and body on non-OK responses', async () => {
