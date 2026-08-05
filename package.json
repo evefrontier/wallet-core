@@ -1,6 +1,6 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
