@@ -8,6 +8,7 @@
         "@mysten/sui": "^2.23.1",
         "@mysten/wallet-standard": "^0.20.3",
         "@mysten/webcrypto-signer": "^0.1.2",
+        "@scure/bip39": "^2.2.0",
       },
       "devDependencies": {
         "@biomejs/biome": "2.4.15",

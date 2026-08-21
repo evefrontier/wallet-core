@@ -26,6 +26,26 @@
  * - `validateNewAddressAlias` / `validateExistingAddressAlias` input checks
  * - `isAddressAliasCall`, for wallet approval flows that flag alias
  *   transactions
+ * - enforcement + onboarding: the alias policy (`evaluateAliasEnforcement`,
+ *   `checkAliasEnforcement`), a `createAliasEnforcedSigner` wrapper that blocks
+ *   signing until an alias exists, and `generateAliasKey` /
+ *   `registerAcknowledgedAlias` to provision and register the first alias
+ *
+ * ## Enforcement & onboarding
+ *
+ * Wallets can require every account to have at least one alias that is not the
+ * account itself before allowing signing. On-chain state is the source of
+ * truth; user acknowledgement gates registering the alias.
+ *
+ * 1. Wrap the zkLogin signer with `createAliasEnforcedSigner` and use it for
+ *    all signing. It throws `AliasEnforcementError` until an alias exists,
+ *    exempting the alias-setup transaction itself.
+ * 2. On that error, call `generateAliasKey()` and display the returned
+ *    `mnemonic` + `privateKey` to the user once — never persist them.
+ * 3. After the user acknowledges saving the key, call
+ *    `registerAcknowledgedAlias({ acknowledged: true, aliasAddress, ... })` to
+ *    register the key's address on-chain, then refresh the signer's status
+ *    resolver so signing unblocks.
  *
  * All chain-facing helpers accept any client satisfying the Mysten SDK's
  * `ClientWithCoreApi` (e.g. `SuiGrpcClient`), and any signer with a
@@ -70,6 +90,29 @@ export {
   DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
   MAX_ADDRESS_ALIASES,
 } from './config'
+export {
+  AliasEnforcementError,
+  type AliasEnforcementReason,
+  type AliasEnforcementStatus,
+  checkAliasEnforcement,
+  evaluateAliasEnforcement,
+  hasEnforceableAlias,
+} from './enforcement'
+export {
+  AliasEnforcedSigner,
+  type AliasEnforcedSignerConfig,
+  createAliasEnforcedSigner,
+  createOnChainStatusResolver,
+  type EnforceableSigner,
+} from './guarded-signer'
+export {
+  AliasAcknowledgementRequiredError,
+  type GeneratedAliasKey,
+  generateAliasKey,
+  type RegisterAcknowledgedAliasParams,
+  type RegisterAcknowledgedAliasResult,
+  registerAcknowledgedAlias,
+} from './provision'
 export { getAddressAliases, parseAddressAliases } from './query'
 export { isAddressAliasCall } from './risk'
 export {
