@@ -1,11 +1,19 @@
 import type { ClientWithCoreApi } from '@mysten/sui/client'
 import { Transaction } from '@mysten/sui/transactions'
+import { normalizeStructTag } from '@mysten/sui/utils'
 import {
   ADDRESS_ALIAS_MODULE,
   ADDRESS_ALIAS_STATE,
   ADDRESS_ALIASES_TYPE,
   DEFAULT_ADDRESS_ALIAS_GAS_BUDGET,
 } from './config'
+
+/**
+ * Canonical form of {@link ADDRESS_ALIASES_TYPE}. Effects report object types
+ * in normalized form (full 32-byte address), so the short-form constant must be
+ * normalized before comparison.
+ */
+const NORMALIZED_ADDRESS_ALIASES_TYPE = normalizeStructTag(ADDRESS_ALIASES_TYPE)
 
 /**
  * Anything able to sign BCS transaction bytes — the Mysten `Signer` base class
@@ -237,12 +245,16 @@ export async function executeEnableAddressAliasTx({
   }
 
   const { digest, effects, objectTypes } = result.Transaction
-  const created = effects?.changedObjects.find(
-    (object) =>
-      object.idOperation === 'Created' &&
-      (objectTypes?.[object.objectId]?.startsWith(ADDRESS_ALIASES_TYPE) ??
-        false),
-  )
+  const created = effects?.changedObjects.find((object) => {
+    if (object.idOperation !== 'Created') return false
+    const type = objectTypes?.[object.objectId]
+    // `enable` mints exactly one `AddressAliases` object; match its type
+    // exactly after normalizing (effects report the full 32-byte address form).
+    return (
+      type != null &&
+      normalizeStructTag(type) === NORMALIZED_ADDRESS_ALIASES_TYPE
+    )
+  })
 
   return { digest, objectId: created?.objectId }
 }

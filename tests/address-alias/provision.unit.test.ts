@@ -50,7 +50,9 @@ describe('registerAcknowledgedAlias', () => {
     return { $kind: 'Transaction', Transaction: { digest } }
   }
 
-  const ALIASES_TYPE = '0x2::address_alias::AddressAliases'
+  // Report object types in normalized (full 32-byte address) form, as
+  // the SDK returns them — not the short `0x2::…` constant.
+  const ALIASES_TYPE = `0x${'0'.repeat(63)}2::address_alias::AddressAliases`
 
   /** An enable result whose effects surface the minted AddressAliases object. */
   function enableResultWithEffects(digest: string, objectId: string) {

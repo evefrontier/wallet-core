@@ -113,6 +113,9 @@ export interface RegisterAcknowledgedAliasResult {
  * {@link AliasAcknowledgementRequiredError} when not acknowledged, or a
  * validation error when the alias address is invalid, self, a duplicate, or
  * over the maximum.
+ *
+ * Safe to retry: if a prior call minted the object but failed before `add`, a
+ * subsequent call re-reads `enabled: true`, skips `enable`, and only runs `add`.
  */
 export async function registerAcknowledgedAlias({
   suiClient,

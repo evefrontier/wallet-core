@@ -32,8 +32,17 @@ function innerSigner() {
 
 /** Spies `Transaction.from` so decoding yields a single command with the given module. */
 function stubDecodedModule(module: string) {
+  stubDecodedModules(module)
+}
+
+/** Spies `Transaction.from` so decoding yields one MoveCall command per module. */
+function stubDecodedModules(...modules: string[]) {
   vi.spyOn(Transaction, 'from').mockReturnValue({
-    getData: () => ({ commands: [{ MoveCall: { package: '0x2', module } }] }),
+    getData: () => ({
+      commands: modules.map((module) => ({
+        MoveCall: { package: '0x2', module },
+      })),
+    }),
   } as never)
 }
 
@@ -99,6 +108,23 @@ describe('createAliasEnforcedSigner - signTransaction', () => {
       owner: OWNER,
       resolveStatus: vi.fn().mockResolvedValue(UNSATISFIED),
       allowAliasSetupBypass: false,
+    })
+
+    await expect(signer.signTransaction(BYTES)).rejects.toBeInstanceOf(
+      AliasEnforcementError,
+    )
+    expect(inner.signTransaction).not.toHaveBeenCalled()
+  })
+
+  it('does not bypass when an alias call is bundled with a non-alias command', async () => {
+    // A PTB mixing an address-alias call with an asset-moving command must not
+    // slip past enforcement — every command has to be an alias call to qualify.
+    stubDecodedModules('address_alias', 'coin')
+    const inner = innerSigner()
+    const signer = createAliasEnforcedSigner({
+      signer: inner,
+      owner: OWNER,
+      resolveStatus: vi.fn().mockResolvedValue(UNSATISFIED),
     })
 
     await expect(signer.signTransaction(BYTES)).rejects.toBeInstanceOf(

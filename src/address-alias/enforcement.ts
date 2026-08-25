@@ -79,7 +79,7 @@ export function hasEnforceableAlias(
  * Reads the owner's on-chain aliases and evaluates the enforcement policy.
  * The client is the authoritative source of truth; callers that sign
  * frequently should cache the result and refresh it after registering an
- * alias (see `createOnChainStatusResolver`).
+ * alias (see `createOnChainStatusResolver` in `./guarded-signer`).
  */
 export async function checkAliasEnforcement(
   client: ClientWithCoreApi,

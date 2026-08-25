@@ -77,11 +77,22 @@ export function createOnChainStatusResolver(
   return () => checkAliasEnforcement(client, owner)
 }
 
-/** True when a decoded transaction contains at least one address-alias MoveCall. */
+/**
+ * True when a decoded transaction consists solely of address-alias MoveCalls.
+ *
+ * The exemption requires *every* command to be an address-alias call (and at
+ * least one to exist), not merely that one is present. This keeps a caller from
+ * bundling an alias call together with asset-moving commands to slip the whole
+ * PTB past enforcement. The `enable`/`add` transactions this library builds each
+ * contain a single alias MoveCall, so they still qualify.
+ */
 function isAliasSetupTransaction(bytes: Uint8Array): boolean {
   try {
     const { commands } = Transaction.from(bytes).getData()
-    return commands.some((command) => isAddressAliasCall(command))
+    return (
+      commands.length > 0 &&
+      commands.every((command) => isAddressAliasCall(command))
+    )
   } catch {
     // Undecodable bytes are never treated as an alias-setup exemption.
     return false
@@ -123,6 +134,12 @@ export class AliasEnforcedSigner implements EnforceableSigner {
     return this.#allowAliasSetupBypass && isAliasSetupTransaction(bytes)
   }
 
+  /**
+   * Raw byte signing, below the intent layer. Deliberately unguarded: it has no
+   * intent to distinguish a transaction from a personal message, so enforcement
+   * cannot be applied here. Sign through `signTransaction`, `signWithIntent`, or
+   * `client.core.signAndExecuteTransaction` for the alias policy to take effect.
+   */
   sign(bytes: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
     return this.#signer.sign(bytes)
   }
