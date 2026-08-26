@@ -15,6 +15,7 @@
 
 import type { ClientWithCoreApi } from '@mysten/sui/client'
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
+import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { generateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
 import { getAddressAliases } from './query'
@@ -108,8 +109,9 @@ export interface RegisterAcknowledgedAliasResult {
  * acknowledgement.
  *
  * Mints the owner's `AddressAliases` object first when it does not exist yet
- * (`enable` transfers the minted object internally, so its id is only known
- * after a re-read — enable and add cannot share one PTB). Throws
+ * (`enable` transfers the minted object internally, so its id is read from the
+ * enable transaction effects, with a re-read as a fallback — enable and add
+ * cannot share one PTB). Throws
  * {@link AliasAcknowledgementRequiredError} when not acknowledged, or a
  * validation error when the alias address is invalid, self, a duplicate, or
  * over the maximum.
@@ -138,6 +140,14 @@ export async function registerAcknowledgedAlias({
   })
   if (validationError) {
     throw new Error(validationError)
+  }
+
+  // Validation passed, so the address is well-formed; normalize it to the full
+  // 32-byte form (also stripping any surrounding whitespace) before it reaches
+  // the transaction builder or the self comparison.
+  const normalizedAlias = normalizeSuiAddress(aliasAddress.trim())
+  if (normalizedAlias === normalizeSuiAddress(owner)) {
+    throw new Error('Cannot register the owner address as its own alias')
   }
 
   let enableDigest: string | undefined
@@ -175,7 +185,7 @@ export async function registerAcknowledgedAlias({
       addAddressAliasTxBytes(
         sender,
         aliasesObjectId,
-        aliasAddress,
+        normalizedAlias,
         client,
         gasBudget,
       ),
