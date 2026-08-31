@@ -1,5 +1,5 @@
 /**
- * Address alias configuration (`sui::address_alias`).
+ * Address alias configuration (`0x2::address_alias`).
  *
  * @experimental This module's API has not been architecturally agreed on and
  * may change or be removed without a major version bump.
