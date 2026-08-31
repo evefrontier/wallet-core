@@ -29,7 +29,7 @@ describe('provisionLedgerAlias', () => {
       provisionLedgerAlias({
         ledgerClient: {},
         suiClient: {} as never,
-        // Non-hardened / wrong-coin-type path is not a valid Sui Ed25519 path.
+        // Non-hardened path segments are invalid here (expected a fully-hardened SLIP-0010 Ed25519 path).
         derivationPath: "m/44'/0'/0'/0/0",
       }),
     ).rejects.toThrow(/Invalid Sui derivation path/)
