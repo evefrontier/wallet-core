@@ -338,7 +338,7 @@ const DETERMINISTIC_RPC_CODES = new Set([
 // deterministic check, so HTTP codes match only in context (never a bare `503`,
 // which could be a Move abort code) to avoid masking a real failure as retryable.
 const TRANSIENT_MESSAGE =
-  /tim ?e?out|timed out|unavailable|temporarily|overloaded|connection|failed to connect|fetch failed|requires a connection|reserved for another transaction|equivocated|(?:\bhttp\b[\s/:]*|\bstatus\b[\s:]*(?:code)?[\s:]*)(?:403|429|502|503|504)\b|\b(?:403|429|502|503|504)\s+(?:forbidden|too many|bad gateway|service unavailable|gateway time)|-32050|-32604/i
+  /time ?out|timed out|unavailable|temporarily|overloaded|connection|failed to connect|fetch failed|requires a connection|reserved for another transaction|equivocated|(?:\bhttp\b[\s/:]*|\bstatus\b[\s:]*(?:code)?[\s:]*)(?:403|429|502|503|504)\b|\b(?:403|429|502|503|504)\s+(?:forbidden|too many|bad gateway|service unavailable|gateway time)|-32050|-32604/i
 // Failures the node reports before execution that the transaction cannot recover
 // from as-is (gas/balance shortfalls, input validation, verification).
 const DETERMINISTIC_MESSAGE =
