@@ -1,5 +1,14 @@
-import { isValidSuiAddress } from '@mysten/sui/utils'
+import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui/utils'
 import { MAX_ADDRESS_ALIASES } from './config'
+
+/**
+ * Membership test that normalizes both sides first, so a short- or mixed-case
+ * `candidate` still matches its canonical on-chain form. Assumes valid addresses.
+ */
+const includesAddress = (existing: string[], candidate: string): boolean => {
+  const normalized = normalizeSuiAddress(candidate)
+  return existing.some((address) => normalizeSuiAddress(address) === normalized)
+}
 
 export type ValidateAddressAliasParams = {
   addressAlias: string
@@ -22,7 +31,7 @@ export const validateNewAddressAlias = ({
   if (!isValidSuiAddress(trimmed)) {
     return 'Not a valid Sui address'
   }
-  if (existing.includes(trimmed)) {
+  if (includesAddress(existing, trimmed)) {
     return 'Address is already an address alias'
   }
   if (existing.length >= MAX_ADDRESS_ALIASES) {
@@ -47,7 +56,7 @@ export const validateExistingAddressAlias = ({
   if (!isValidSuiAddress(trimmed)) {
     return 'Not a valid Sui address'
   }
-  if (!existing.includes(trimmed)) {
+  if (!includesAddress(existing, trimmed)) {
     return 'Address is not an existing address alias'
   }
   return null
