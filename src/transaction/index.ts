@@ -31,8 +31,50 @@
  * }
  * const tx = Transaction.from(transactionForSigning)
  * ```
+ *
+ * ### Simulating the outcome
+ *
+ * Once a transaction is built, `simulateTransactionOutcome` asks the fullnode
+ * for its projected effect on the sender's account — net balance changes, gas,
+ * changed objects, and emitted events — shaped for an approval popup. Coin
+ * display facts (decimals, symbol, name) are resolved through an injected
+ * {@link CoinMetadataResolver}, so this package stays free of any particular
+ * metadata source. `classifyBuildFailure` turns an error thrown while
+ * building/simulating into a predicted failure, or `null` when the failure is
+ * transient and the outcome is unknown.
+ *
+ * ```ts
+ * import {
+ *   simulateTransactionOutcome,
+ *   classifyBuildFailure,
+ * } from '@evefrontier/wallet-core/transaction'
+ *
+ * try {
+ *   const outcome = await simulateTransactionOutcome({
+ *     transactionBytes,
+ *     sender,
+ *     suiClient,
+ *     resolveCoinMetadata: (coinType) => myMetadataSource(coinType),
+ *   })
+ * } catch (err) {
+ *   const predicted = classifyBuildFailure(err)
+ *   if (!predicted) throw err // simulation unavailable
+ * }
+ * ```
  */
 export {
   type ParseTransactionBytesResult,
   parseTransactionBytes,
 } from './parse'
+export {
+  type CoinMetadata,
+  type CoinMetadataResolver,
+  classifyBuildFailure,
+  type ObjectChangeKind,
+  type SimulatedBalanceChange,
+  type SimulatedEvent,
+  type SimulatedGas,
+  type SimulatedObjectChange,
+  simulateTransactionOutcome,
+  type TransactionSimulation,
+} from './simulate'
