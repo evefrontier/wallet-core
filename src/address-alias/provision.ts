@@ -18,6 +18,8 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { generateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
+import type { LedgerProvisionedAlias } from './provision-ledger'
+import type { PasskeyProvisionedAlias } from './provision-passkey'
 import { getAddressAliases } from './query'
 import {
   addAddressAliasTxBytes,
@@ -58,6 +60,38 @@ export function generateAliasKey(): GeneratedAliasKey {
     privateKey: keypair.getSecretKey(),
     address: keypair.toSuiAddress(),
   }
+}
+
+/** Which key backs a provisioned alias. */
+export type AliasSource = 'generated' | 'passkey' | 'ledger'
+
+/**
+ * A generated-mnemonic alias in the common {@link ProvisionedAlias} shape.
+ * Displayed once, never persisted.
+ */
+export interface GeneratedProvisionedAlias extends GeneratedAliasKey {
+  source: 'generated'
+}
+
+/**
+ * The result of provisioning an alias by any source, discriminated on `source`.
+ * Every variant carries an `address` to register on-chain with
+ * {@link registerAcknowledgedAlias}; the remaining fields are the
+ * source-specific material needed to reconstruct the signer for recovery.
+ */
+export type ProvisionedAlias =
+  | GeneratedProvisionedAlias
+  | PasskeyProvisionedAlias
+  | LedgerProvisionedAlias
+
+/**
+ * Generates a mnemonic-backed alias in the unified {@link ProvisionedAlias}
+ * shape — the fallback source when neither a passkey nor a Ledger is available.
+ * Thin wrapper over {@link generateAliasKey}; the same "display once, never
+ * persist" rule applies.
+ */
+export function provisionGeneratedAlias(): GeneratedProvisionedAlias {
+  return { source: 'generated', ...generateAliasKey() }
 }
 
 /**

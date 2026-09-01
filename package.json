@@ -1,6 +1,6 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
@@ -122,6 +122,22 @@
     "@mysten/webcrypto-signer": "^0.1.2",
     "@mysten/wallet-standard": "^0.20.3",
     "@scure/bip39": "^2.2.0"
+  },
+  "peerDependencies": {
+    "@ledgerhq/hw-transport-webhid": "^6.0.0",
+    "@mysten/ledgerjs-hw-app-sui": "^0.9.1",
+    "@mysten/signers": "^1.1.18"
+  },
+  "peerDependenciesMeta": {
+    "@ledgerhq/hw-transport-webhid": {
+      "optional": true
+    },
+    "@mysten/ledgerjs-hw-app-sui": {
+      "optional": true
+    },
+    "@mysten/signers": {
+      "optional": true
+    }
   },
   "overrides": {
     "brace-expansion": "^5.0.8",
