@@ -63,8 +63,14 @@
  * ```
  */
 export {
+  CachedCoinMetadataResolver,
+  type CachedCoinMetadataResolverOptions,
+  COIN_METADATA_CACHE_TTL_MS,
+  type CoinMetadataLookup,
   type CoinMetadataLookupClient,
-  createCoinMetadataResolver,
+  getKnownCoinMetadata,
+  type ResolvedCoinMetadata,
+  type ResolvedCoinMetadataResolver,
   SuiCoinMetadataResolver,
 } from './coin-metadata'
 export {

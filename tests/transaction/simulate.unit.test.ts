@@ -31,9 +31,21 @@ function makeSuiClient(result: unknown) {
 // resolves as EVE. Returns display facts (decimals, symbol, name) directly.
 const resolveCoinMetadata: CoinMetadataResolver = async (coinType) => {
   if (coinType === '0x2::sui::SUI') {
-    return { decimals: 9, symbol: 'SUI', name: 'Sui' }
+    return {
+      decimals: 9,
+      symbol: 'SUI',
+      name: 'Sui',
+      description: 'Sui Native Token',
+      iconUrl: null,
+    }
   }
-  return { decimals: 9, symbol: 'EVE', name: 'EVE' }
+  return {
+    decimals: 9,
+    symbol: 'EVE',
+    name: 'EVE',
+    description: 'EVE token',
+    iconUrl: 'https://example.com/eve.svg',
+  }
 }
 
 const bytes = new Uint8Array([1, 2, 3])
@@ -103,6 +115,8 @@ describe('simulateTransactionOutcome', () => {
         coinType: EVE_COIN,
         symbol: 'EVE',
         name: 'EVE',
+        description: 'EVE token',
+        iconUrl: 'https://example.com/eve.svg',
         amount: '12.5',
         isDebit: false,
       },
@@ -110,6 +124,8 @@ describe('simulateTransactionOutcome', () => {
         coinType: '0x2::sui::SUI',
         symbol: 'SUI',
         name: 'Sui',
+        description: 'Sui Native Token',
+        iconUrl: null,
         amount: '0.0025',
         isDebit: true,
       },
