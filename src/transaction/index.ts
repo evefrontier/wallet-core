@@ -63,6 +63,11 @@
  * ```
  */
 export {
+  type CoinMetadataLookupClient,
+  createCoinMetadataResolver,
+  SuiCoinMetadataResolver,
+} from './coin-metadata'
+export {
   type ParseTransactionBytesResult,
   parseTransactionBytes,
 } from './parse'

@@ -9,7 +9,7 @@ import { formatByDecimals, formatMistToSui } from '#src/utils'
 
 // Fallback coin type for balance changes whose `coinType` comes back empty:
 // the fullnode reports gas movement against native SUI without a type tag.
-const SUI_COIN_TYPE = '0x2::sui::SUI'
+export const SUI_COIN_TYPE = '0x2::sui::SUI'
 
 // On-chain coin decimals are stored as a `u8`, so 255 is the protocol ceiling;
 // anything above it (or non-integer/negative) is a bogus resolver value.
