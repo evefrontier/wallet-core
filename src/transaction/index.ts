@@ -67,6 +67,13 @@ export {
   parseTransactionBytes,
 } from './parse'
 export {
+  PREDICTED_FAILURE_ACKNOWLEDGEMENT,
+  requiresAcknowledgement,
+  reviewTransaction,
+  type TransactionRiskFinding,
+  type TransactionRiskSeverity,
+} from './review'
+export {
   type CoinMetadata,
   type CoinMetadataResolver,
   classifyBuildFailure,

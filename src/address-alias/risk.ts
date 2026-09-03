@@ -7,8 +7,8 @@ const NORMALIZED_ADDRESS_ALIAS_PACKAGE = normalizeSuiAddress(
   ADDRESS_ALIAS_PACKAGE as string,
 )
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /**

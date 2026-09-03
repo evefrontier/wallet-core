@@ -22,6 +22,16 @@
         "typescript": "^6.0.3",
         "vitest": "^4.1.10",
       },
+      "peerDependencies": {
+        "@ledgerhq/hw-transport-webhid": "^6.0.0",
+        "@mysten/ledgerjs-hw-app-sui": "^0.9.1",
+        "@mysten/signers": "^1.1.18",
+      },
+      "optionalPeers": [
+        "@ledgerhq/hw-transport-webhid",
+        "@mysten/ledgerjs-hw-app-sui",
+        "@mysten/signers",
+      ],
     },
   },
   "overrides": {
