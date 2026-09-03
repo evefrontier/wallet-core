@@ -1,4 +1,4 @@
-import { isAddressAliasCall, isRecord } from "#src/address-alias"
+import { isAddressAliasCall, isRecord } from '#src/address-alias'
 
 export type TransactionRiskSeverity = 'danger' | 'warning'
 

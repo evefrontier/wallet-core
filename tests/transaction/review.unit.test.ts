@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  requiresAcknowledgement,
-  reviewTransaction,
-} from '#src/transaction'
+import { requiresAcknowledgement, reviewTransaction } from '#src/transaction'
 
 describe('reviewTransaction', () => {
   it('flags high-risk programmable transaction commands', () => {
