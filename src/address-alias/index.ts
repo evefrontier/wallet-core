@@ -141,7 +141,7 @@ export {
   recoverPasskeyKeypair,
 } from './provision-passkey'
 export { getAddressAliases, parseAddressAliases } from './query'
-export { isAddressAliasCall } from './risk'
+export { isAddressAliasCall, isRecord } from './risk'
 export {
   addAddressAliasTx,
   addAddressAliasTxBytes,
