@@ -11,7 +11,7 @@ import { tokenWithPayload } from '../jwt/test-tokens'
 
 const INPUT: SponsoredTransactionInput = {
   txAction: SponsoredTransactionActions.BRING_ONLINE,
-  assembly: 42,
+  assembly: '42',
   assemblyType: 'storage-units',
   metadata: { name: 'My SSU', description: 'desc', url: 'https://x.example' },
 }
