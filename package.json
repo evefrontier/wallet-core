@@ -1,6 +1,6 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
@@ -15,6 +15,11 @@
       "types": "./dist/crypto/index.d.mts",
       "import": "./dist/crypto/index.mjs",
       "default": "./dist/crypto/index.mjs"
+    },
+    "./coin-types": {
+      "types": "./dist/coin-types/index.d.mts",
+      "import": "./dist/coin-types/index.mjs",
+      "default": "./dist/coin-types/index.mjs"
     },
     "./epoch": {
       "types": "./dist/epoch/index.d.mts",

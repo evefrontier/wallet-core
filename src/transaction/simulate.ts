@@ -5,11 +5,11 @@ import {
   parseStructTag,
   SUI_DECIMALS,
 } from '@mysten/sui/utils'
+import { SUI_COIN_TYPE } from '#src/coin-types'
 import { formatByDecimals, formatMistToSui } from '#src/utils'
 
 // Fallback coin type for balance changes whose `coinType` comes back empty:
 // the fullnode reports gas movement against native SUI without a type tag.
-const SUI_COIN_TYPE = '0x2::sui::SUI'
 
 // On-chain coin decimals are stored as a `u8`, so 255 is the protocol ceiling;
 // anything above it (or non-integer/negative) is a bogus resolver value.
@@ -51,6 +51,8 @@ export type CoinMetadata = {
   decimals?: number
   symbol?: string
   name?: string
+  description?: string | null
+  iconUrl?: string | null
 }
 
 /**
@@ -67,6 +69,8 @@ export type SimulatedBalanceChange = {
   coinType: string
   symbol: string
   name?: string
+  description?: string | null
+  iconUrl?: string | null
   /** Formatted absolute amount, e.g. "12.5". */
   amount: string
   /** True when the account's balance of this coin decreases. */
@@ -254,6 +258,12 @@ async function enrichBalanceChanges(
         coinType,
         symbol: metadata?.symbol ?? extractSymbolFromCoinType(coinType),
         ...(metadata?.name != null ? { name: metadata.name } : {}),
+        ...(metadata?.description !== undefined
+          ? { description: metadata.description }
+          : {}),
+        ...(metadata?.iconUrl !== undefined
+          ? { iconUrl: metadata.iconUrl }
+          : {}),
         amount: formatByDecimals(abs.toString(), decimals),
         isDebit: amount < 0n,
       }
