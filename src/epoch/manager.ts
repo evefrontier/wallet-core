@@ -37,9 +37,20 @@ export type EpochChangedCallback = (
  * Invoked when a callback or a scheduled chain refresh fails. The manager
  * never throws from timer context; wire this up to your logger.
  */
+export type EpochManagerErrorContext =
+  | 'renewal-callback'
+  | 'epoch-changed-callback'
+  | 'transition-refresh'
+
 export type EpochManagerErrorCallback = (
   error: unknown,
-  context: 'renewal-callback' | 'epoch-changed-callback' | 'transition-refresh',
+  context: EpochManagerErrorContext,
+  details?: Record<string, unknown>,
+) => void
+
+export type EpochManagerWarningCallback = (
+  message: string,
+  data?: unknown,
 ) => void
 
 /** Largest delay `setTimeout` honors (2^31 - 1 ms); longer waits are chunked. */
@@ -81,9 +92,12 @@ export interface EpochManagerInitializeOptions {
   renewJitterMs?: number
   /** Randomness source for the per-client jitter offset. Defaults to `Math.random`. */
   random?: () => number
+  /** Randomness source for renewal callback retry delays. Defaults to `Math.random`. */
+  retryRandom?: () => number
   onRenewalDue?: EpochRenewalCallback
   onEpochChanged?: EpochChangedCallback
   onError?: EpochManagerErrorCallback
+  onWarning?: EpochManagerWarningCallback
   /** Refresh state after each expected epoch boundary. Defaults to true. */
   watchEpochTransitions?: boolean
   /** Delay past the expected boundary before refreshing. Defaults to 2000. */
@@ -100,9 +114,11 @@ interface EpochManagerConfig {
   renewJitterMs: number
   /** Per-instance jitter offset in `[0, 1)`, drawn once at initialize. */
   renewJitterFraction: number
+  retryRandom: () => number
   onRenewalDue?: EpochRenewalCallback
   onEpochChanged?: EpochChangedCallback
   onError?: EpochManagerErrorCallback
+  onWarning?: EpochManagerWarningCallback
   watchEpochTransitions: boolean
   epochTransitionBufferMs: number
   nowMs: () => number
@@ -130,6 +146,8 @@ export class EpochManager {
   protected config: EpochManagerConfig | null = null
   protected state: EpochState | null = null
   protected renewalTimer: ReturnType<typeof setTimeout> | null = null
+  protected renewalRetryTimer: ReturnType<typeof setTimeout> | null = null
+  protected renewalRetryAttempt = 0
   protected epochTransitionTimer: ReturnType<typeof setTimeout> | null = null
 
   async initialize({
@@ -139,9 +157,11 @@ export class EpochManager {
     renewBeforeMs = DEFAULT_RENEW_BEFORE_MS,
     renewJitterMs = DEFAULT_RENEW_JITTER_MS,
     random = () => Math.random(),
+    retryRandom = () => Math.random(),
     onRenewalDue,
     onEpochChanged,
     onError,
+    onWarning,
     watchEpochTransitions = true,
     epochTransitionBufferMs = 2_000,
     nowMs = () => Date.now(),
@@ -156,9 +176,11 @@ export class EpochManager {
       renewBeforeMs: toNonNegativeInt(renewBeforeMs, DEFAULT_RENEW_BEFORE_MS),
       renewJitterMs: toNonNegativeInt(renewJitterMs, DEFAULT_RENEW_JITTER_MS),
       renewJitterFraction: toJitterFraction(random()),
+      retryRandom,
       ...(onRenewalDue ? { onRenewalDue } : {}),
       ...(onEpochChanged ? { onEpochChanged } : {}),
       ...(onError ? { onError } : {}),
+      ...(onWarning ? { onWarning } : {}),
       watchEpochTransitions,
       epochTransitionBufferMs: toNonNegativeInt(epochTransitionBufferMs, 2_000),
       nowMs,
@@ -231,17 +253,85 @@ export class EpochManager {
       clearTimeout(this.renewalTimer)
       this.renewalTimer = null
     }
+    this.clearRenewalRetryTimer()
     if (this.epochTransitionTimer !== null) {
       clearTimeout(this.epochTransitionTimer)
       this.epochTransitionTimer = null
     }
   }
 
+  protected clearRenewalRetryTimer(): void {
+    if (this.renewalRetryTimer !== null) {
+      clearTimeout(this.renewalRetryTimer)
+      this.renewalRetryTimer = null
+    }
+    this.renewalRetryAttempt = 0
+  }
+
+  protected getRenewalRetryDelayMs(attempt: number): number {
+    const baseMs = 120_000
+    const maxMs = 5 * 60_000
+    const boundedAttempt = Math.max(0, Math.min(attempt, 16))
+    const exponentialMs = Math.min(maxMs, baseMs * 2 ** boundedAttempt)
+    const random = toJitterFraction(
+      this.requireInitialized().config.retryRandom(),
+    )
+
+    return Math.max(1, Math.floor(random * (exponentialMs + 1)))
+  }
+
+  protected async notifyRenewalDue(
+    callback: EpochRenewalCallback,
+    state: EpochState,
+  ): Promise<void> {
+    const { config } = this.requireInitialized()
+
+    try {
+      await callback({
+        reason: 'renewal_due',
+        emittedAtMs: config.nowMs(),
+        epoch: state,
+      })
+      if (this.config !== config) {
+        return
+      }
+      this.clearRenewalRetryTimer()
+    } catch (error) {
+      if (this.config !== config) {
+        return
+      }
+      this.reportError(error, 'renewal-callback', {
+        message: 'epoch renewal callback failed',
+        retryAttempt: this.renewalRetryAttempt,
+      })
+      this.scheduleRenewalRetry(callback)
+    }
+  }
+
+  protected scheduleRenewalRetry(callback: EpochRenewalCallback): void {
+    const { config } = this.requireInitialized()
+    const state = this.getState()
+    if (state.msUntilMaxEpoch <= 0) {
+      config.onWarning?.('skip renewal callback retry after maxEpoch elapsed', {
+        currentEpoch: state.currentEpoch,
+        maxEpoch: state.numericMaxEpoch,
+      })
+      return
+    }
+
+    const delayMs = this.getRenewalRetryDelayMs(this.renewalRetryAttempt)
+    this.renewalRetryAttempt += 1
+    this.startTimerAt(config.nowMs() + delayMs, 'renewalRetryTimer', () => {
+      void this.notifyRenewalDue(callback, this.getState())
+    })
+  }
+
   protected reportError(
     error: unknown,
-    context: Parameters<EpochManagerErrorCallback>[1],
+    context: EpochManagerErrorContext,
+    details?: Record<string, unknown>,
   ): void {
-    this.config?.onError?.(error, context)
+    this.config?.onError?.(error, context, details)
   }
 
   /**
@@ -251,7 +341,7 @@ export class EpochManager {
    */
   protected startTimerAt(
     targetMs: number,
-    timerKey: 'renewalTimer' | 'epochTransitionTimer',
+    timerKey: 'renewalTimer' | 'renewalRetryTimer' | 'epochTransitionTimer',
     onFire: () => void,
   ): void {
     const { config } = this.requireInitialized()
@@ -280,21 +370,16 @@ export class EpochManager {
       clearTimeout(this.renewalTimer)
       this.renewalTimer = null
     }
+    this.clearRenewalRetryTimer()
     if (!config.onRenewalDue) {
       return
     }
 
     this.startTimerAt(state.renewAtTimestampMs, 'renewalTimer', () => {
-      const latest = this.getState()
-      void Promise.resolve(
-        config.onRenewalDue?.({
-          reason: 'renewal_due',
-          emittedAtMs: config.nowMs(),
-          epoch: latest,
-        }),
-      ).catch((error) => {
-        this.reportError(error, 'renewal-callback')
-      })
+      void this.notifyRenewalDue(
+        config.onRenewalDue as EpochRenewalCallback,
+        this.getState(),
+      )
     })
   }
 
