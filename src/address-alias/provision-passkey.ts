@@ -88,7 +88,7 @@ function assertBrowserPasskeyEnv(): void {
 }
 
 /**
- * Builds a {@link BrowserPasskeyProvider} for the given app/relying-party. The
+ * Builds a `BrowserPasskeyProvider` for the given app/relying-party. The
  * default authenticator is `platform` (biometric), unlike the SDK default of
  * `cross-platform`.
  */
@@ -123,7 +123,7 @@ export async function provisionPasskeyAlias(
     source: 'passkey',
     address: publicKey.toSuiAddress(),
     publicKey: publicKey.toBase64(),
-    credentialId: credentialId && toBase64(credentialId),
+    ...(credentialId ? { credentialId: toBase64(credentialId) } : {}),
     keypair,
   }
 }
@@ -140,7 +140,7 @@ export interface RecoverPasskeyKeypairParams {
 }
 
 /**
- * Rebuilds a {@link PasskeyKeypair} for a previously created passkey.
+ * Rebuilds a `PasskeyKeypair` for a previously created passkey.
  *
  * When {@link RecoverPasskeyKeypairParams.publicKey} is provided the keypair is
  * constructed directly. Otherwise it is recovered by signing two messages and

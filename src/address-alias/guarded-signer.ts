@@ -147,7 +147,7 @@ export class AliasEnforcedSigner implements EnforceableSigner {
   /**
    * Guards signing based on intent, then delegates to the inner signer.
    * Transaction signing (`TransactionData`) bypasses enforcement for
-   * alias-setup calls (see {@link #isAliasSetupBypass}); personal messages
+   * alias-setup calls (see `#isAliasSetupBypass`); personal messages
    * are never enforced, since they don't move assets on-chain.
    *
    * Note: this does not act as a single chokepoint. Because the wrapper

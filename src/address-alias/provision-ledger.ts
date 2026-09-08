@@ -53,7 +53,7 @@ export interface ProvisionLedgerAliasParams {
   suiClient: ClientWithCoreApi
   /**
    * SLIP-0010 hardened Ed25519 path (the scheme the Ledger Sui app uses).
-   * Defaults to {@link DEFAULT_ED25519_DERIVATION_PATH} (`m/44'/784'/0'/0'/0'`).
+   * Defaults to `DEFAULT_ED25519_DERIVATION_PATH` (`m/44'/784'/0'/0'/0'`).
    * A malformed path is rejected before touching the device.
    */
   derivationPath?: string
