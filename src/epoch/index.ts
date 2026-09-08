@@ -59,7 +59,9 @@ export {
   type EpochChangedNotification,
   EpochManager,
   type EpochManagerErrorCallback,
+  type EpochManagerErrorContext,
   type EpochManagerInitializeOptions,
+  type EpochManagerWarningCallback,
   type EpochRenewalCallback,
   type EpochRenewalNotification,
 } from './manager'

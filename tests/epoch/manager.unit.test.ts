@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { type ChainEpochInfo, EpochManager } from '#src/epoch'
+import {
+  type ChainEpochInfo,
+  DEFAULT_RENEW_BEFORE_MS,
+  EpochManager,
+} from '#src/epoch'
 
 const EPOCH_START = 1_700_000_000_000
 const DURATION = 3_600_000
@@ -10,6 +14,16 @@ function chainInfo(overrides: Partial<ChainEpochInfo> = {}): ChainEpochInfo {
     epochDurationMs: DURATION,
     epochStartTimestampMs: EPOCH_START,
     ...overrides,
+  }
+}
+
+class RetryTestEpochManager extends EpochManager {
+  constructor(private readonly retryDelaysMs: number[]) {
+    super()
+  }
+
+  protected override getRenewalRetryDelayMs(attempt: number): number {
+    return this.retryDelaysMs[attempt] ?? this.retryDelaysMs.at(-1) ?? 100
   }
 }
 
@@ -89,13 +103,173 @@ describe('EpochManager', () => {
     await manager.initialize({
       fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
       epochsFromCurrent: 0,
-      onRenewalDue: vi.fn().mockRejectedValue(failure),
+      onRenewalDue: vi.fn().mockRejectedValueOnce(failure),
       onError,
       watchEpochTransitions: false,
     })
 
     await vi.advanceTimersByTimeAsync(DURATION)
-    expect(onError).toHaveBeenCalledExactlyOnceWith(failure, 'renewal-callback')
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      failure,
+      'renewal-callback',
+      {
+        message: 'epoch renewal callback failed',
+        retryAttempt: 0,
+      },
+    )
+    manager.reset()
+  })
+
+  it('should support existing two-argument onError callbacks', async () => {
+    const manager = new EpochManager()
+    const failure = new Error('renewal failed')
+    const onError = vi.fn((_error: unknown, _context: string) => {})
+    await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 0,
+      onRenewalDue: vi.fn().mockRejectedValueOnce(failure),
+      onError,
+      watchEpochTransitions: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(DURATION)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      failure,
+      'renewal-callback',
+      expect.objectContaining({ retryAttempt: 0 }),
+    )
+    manager.reset()
+  })
+
+  it('should retry failed renewal callbacks and stop after success', async () => {
+    const manager = new RetryTestEpochManager([50, 100])
+    const onRenewalDue = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('transient 1'))
+      .mockRejectedValueOnce(new Error('transient 2'))
+      .mockResolvedValueOnce(undefined)
+    const onError = vi.fn()
+
+    await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(
+        chainInfo({
+          epochDurationMs: 1_000,
+          epochStartTimestampMs: EPOCH_START,
+        }),
+      ),
+      epochsFromCurrent: 0,
+      renewBeforeMs: 200,
+      renewJitterMs: 0,
+      onRenewalDue,
+      onError,
+      watchEpochTransitions: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(800)
+    expect(onRenewalDue).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(50)
+    expect(onRenewalDue).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(100)
+    expect(onRenewalDue).toHaveBeenCalledTimes(3)
+    await vi.advanceTimersByTimeAsync(500)
+
+    expect(onRenewalDue).toHaveBeenCalledTimes(3)
+    expect(onError).toHaveBeenCalledTimes(2)
+    manager.reset()
+  })
+
+  it('should stop retrying when maxEpoch has elapsed', async () => {
+    const manager = new RetryTestEpochManager([100])
+    const onRenewalDue = vi.fn().mockRejectedValue(new Error('outage'))
+    const onWarning = vi.fn()
+
+    await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(
+        chainInfo({
+          epochDurationMs: 1_000,
+          epochStartTimestampMs: EPOCH_START,
+        }),
+      ),
+      epochsFromCurrent: 0,
+      renewBeforeMs: 200,
+      renewJitterMs: 0,
+      onRenewalDue,
+      onWarning,
+      watchEpochTransitions: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(1_800)
+    expect(onRenewalDue).toHaveBeenCalledTimes(3)
+    expect(onWarning).toHaveBeenCalledExactlyOnceWith(
+      'skip renewal callback retry after maxEpoch elapsed',
+      { currentEpoch: 100, maxEpoch: 100 },
+    )
+    manager.reset()
+  })
+
+  it('should cancel a pending renewal retry when stopped', async () => {
+    const manager = new RetryTestEpochManager([100])
+    const onRenewalDue = vi.fn().mockRejectedValue(new Error('outage'))
+
+    await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(
+        chainInfo({
+          epochDurationMs: 1_000,
+          epochStartTimestampMs: EPOCH_START,
+        }),
+      ),
+      epochsFromCurrent: 0,
+      renewBeforeMs: 200,
+      renewJitterMs: 0,
+      onRenewalDue,
+      watchEpochTransitions: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(800)
+    manager.stop()
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(onRenewalDue).toHaveBeenCalledOnce()
+    manager.reset()
+  })
+
+  it('should bound full-jitter retry delays using the injected retry randomness', async () => {
+    const manager = new EpochManager()
+    await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 0,
+      retryRandom: () => 0.5,
+      watchEpochTransitions: false,
+    })
+
+    expect(
+      (
+        manager as unknown as {
+          getRenewalRetryDelayMs: (attempt: number) => number
+        }
+      ).getRenewalRetryDelayMs(0),
+    ).toBe(60_000)
+    manager.reset()
+  })
+
+  it('should preserve the existing absoluteMaxEpoch clamp behavior', async () => {
+    const manager = new EpochManager()
+    const onRenewalDue = vi.fn()
+
+    const state = await manager.initialize({
+      fetchEpoch: vi.fn().mockResolvedValue(chainInfo()),
+      epochsFromCurrent: 2,
+      absoluteMaxEpoch: 42,
+      renewJitterMs: 0,
+      onRenewalDue,
+      watchEpochTransitions: false,
+    })
+
+    expect(state.numericMaxEpoch).toBe(100)
+    await vi.advanceTimersByTimeAsync(DURATION - DEFAULT_RENEW_BEFORE_MS - 1)
+    expect(onRenewalDue).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(onRenewalDue).toHaveBeenCalledOnce()
     manager.reset()
   })
 
@@ -123,6 +297,62 @@ describe('EpochManager', () => {
     expect(fetchEpoch).toHaveBeenCalledTimes(2)
     expect(onEpochChanged).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ previousEpoch: 100, currentEpoch: 101 }),
+    )
+    manager.reset()
+  })
+
+  it('should report epoch transition callback failures via onError', async () => {
+    const manager = new EpochManager()
+    const failure = new Error('epoch changed failed')
+    const onError = vi.fn()
+    const fetchEpoch = vi
+      .fn()
+      .mockResolvedValueOnce(chainInfo())
+      .mockResolvedValue(
+        chainInfo({
+          currentEpoch: 101,
+          epochStartTimestampMs: EPOCH_START + DURATION,
+        }),
+      )
+
+    await manager.initialize({
+      fetchEpoch,
+      epochsFromCurrent: 0,
+      onEpochChanged: vi.fn().mockRejectedValue(failure),
+      onError,
+      epochTransitionBufferMs: 2_000,
+    })
+
+    await vi.advanceTimersByTimeAsync(DURATION + 2_000)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      failure,
+      'epoch-changed-callback',
+      undefined,
+    )
+    manager.reset()
+  })
+
+  it('should report scheduled transition refresh failures via onError', async () => {
+    const manager = new EpochManager()
+    const failure = new Error('fetch failed')
+    const onError = vi.fn()
+    const fetchEpoch = vi
+      .fn()
+      .mockResolvedValueOnce(chainInfo())
+      .mockRejectedValueOnce(failure)
+
+    await manager.initialize({
+      fetchEpoch,
+      epochsFromCurrent: 0,
+      onError,
+      epochTransitionBufferMs: 2_000,
+    })
+
+    await vi.advanceTimersByTimeAsync(DURATION + 2_000)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      failure,
+      'transition-refresh',
+      undefined,
     )
     manager.reset()
   })
