@@ -1,14 +1,7 @@
-import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui/utils'
-import { MAX_ADDRESS_ALIASES } from './config'
-
-/**
- * Membership test that normalizes both sides first, so a short- or mixed-case
- * `candidate` still matches its canonical on-chain form. Assumes valid addresses.
- */
-const includesAddress = (existing: string[], candidate: string): boolean => {
-  const normalized = normalizeSuiAddress(candidate)
-  return existing.some((address) => normalizeSuiAddress(address) === normalized)
-}
+import { isValidSuiAddress } from '@mysten/sui/utils'
+import { excludeAddress, includesAddress } from './address'
+import { type AddressAliasesInfo, MAX_ADDRESS_ALIASES } from './config'
+import { hasEnforceableAlias } from './enforcement'
 
 export type ValidateAddressAliasParams = {
   addressAlias: string
@@ -58,6 +51,51 @@ export const validateExistingAddressAlias = ({
   }
   if (!includesAddress(existing, trimmed)) {
     return 'Address is not an existing address alias'
+  }
+  return null
+}
+
+export type ValidateAddressAliasRemovalParams = {
+  /** Address the caller wants to remove from their aliases. */
+  addressAlias: string
+  /** Owner of the `AddressAliases` object (the account being protected). */
+  owner: string
+  /** Current on-chain alias state, the authoritative source of truth. */
+  info: AddressAliasesInfo
+}
+
+/**
+ * Returns the first blocking error for removing an alias, or `null` when it is
+ * safe to remove.
+ *
+ * Extends {@link validateExistingAddressAlias} with an enforceability guard:
+ * after simulating the removal, the owner must still have at least one alias
+ * that is not itself (see {@link hasEnforceableAlias}). This blocks stranding an
+ * account by removing its last co-signing key, which would then fail alias
+ * enforcement and lock the owner out of signing.
+ *
+ * This is the authoritative rule. Callers that gate the feature (rollout flags,
+ * localnet exemptions) should apply that gating themselves and fall back to
+ * {@link validateExistingAddressAlias} when enforcement is inactive.
+ */
+export const validateAddressAliasRemoval = ({
+  addressAlias,
+  owner,
+  info,
+}: ValidateAddressAliasRemovalParams): string | null => {
+  const base = validateExistingAddressAlias({
+    addressAlias,
+    existing: info.addressAliases,
+  })
+  if (base) return base
+
+  const remaining = excludeAddress(info.addressAliases, addressAlias.trim())
+  const stillEnforceable = hasEnforceableAlias(
+    { ...info, addressAliases: remaining },
+    owner,
+  )
+  if (!stillEnforceable) {
+    return 'You can’t remove your last recovery alias. Add another personal access key before removing this one.'
   }
   return null
 }
