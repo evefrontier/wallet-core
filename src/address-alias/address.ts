@@ -1,13 +1,10 @@
 /**
- * Normalized Sui address comparison helpers (`0x2::address_alias`).
+ * Sui address comparison helpers (`0x2::address_alias`). Each normalizes both
+ * sides before comparing, so short-form and mixed-case inputs match their
+ * canonical form. Assumes valid addresses.
  *
  * @experimental This module's API has not been architecturally agreed on and
  * may change or be removed without a major version bump.
- *
- * On-chain addresses can appear in short-form and mixed-case variants that all
- * denote the same account. These helpers normalize both sides before comparing
- * so callers never have to remember to do it themselves. They assume valid
- * addresses; validate first where that matters.
  */
 
 import { normalizeSuiAddress } from '@mysten/sui/utils'

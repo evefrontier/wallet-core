@@ -152,4 +152,14 @@ describe('validateAddressAliasRemoval', () => {
       }),
     ).toBe('Address is not an existing address alias')
   })
+
+  it('should skip the enforceability guard when aliasing is not enabled', () => {
+    expect(
+      validateAddressAliasRemoval({
+        addressAlias: VALID_ADDRESS,
+        owner: OWNER_ADDRESS,
+        info: { enabled: false, addressAliases: [VALID_ADDRESS] },
+      }),
+    ).toBeNull()
+  })
 })

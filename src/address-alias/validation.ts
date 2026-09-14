@@ -66,17 +66,9 @@ export type ValidateAddressAliasRemovalParams = {
 
 /**
  * Returns the first blocking error for removing an alias, or `null` when it is
- * safe to remove.
- *
- * Extends {@link validateExistingAddressAlias} with an enforceability guard:
- * after simulating the removal, the owner must still have at least one alias
- * that is not itself (see {@link hasEnforceableAlias}). This blocks stranding an
- * account by removing its last co-signing key, which would then fail alias
- * enforcement and lock the owner out of signing.
- *
- * This is the authoritative rule. Callers that gate the feature (rollout flags,
- * localnet exemptions) should apply that gating themselves and fall back to
- * {@link validateExistingAddressAlias} when enforcement is inactive.
+ * safe to remove. Runs {@link validateExistingAddressAlias}, then — only when
+ * aliasing is enabled — blocks removal that would leave the owner with no alias
+ * other than itself (see {@link hasEnforceableAlias}).
  */
 export const validateAddressAliasRemoval = ({
   addressAlias,
@@ -88,6 +80,8 @@ export const validateAddressAliasRemoval = ({
     existing: info.addressAliases,
   })
   if (base) return base
+
+  if (!info.enabled) return null
 
   const remaining = excludeAddress(info.addressAliases, addressAlias.trim())
   const stillEnforceable = hasEnforceableAlias(
