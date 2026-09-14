@@ -155,6 +155,8 @@ export {
 } from './transaction'
 export {
   type ValidateAddressAliasParams,
+  type ValidateAddressAliasRemovalParams,
+  validateAddressAliasRemoval,
   validateExistingAddressAlias,
   validateNewAddressAlias,
 } from './validation'

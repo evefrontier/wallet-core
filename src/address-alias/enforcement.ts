@@ -12,7 +12,7 @@
  */
 
 import type { ClientWithCoreApi } from '@mysten/sui/client'
-import { normalizeSuiAddress } from '@mysten/sui/utils'
+import { addressesEqual } from './address'
 import type { AddressAliasesInfo } from './config'
 import { getAddressAliases } from './query'
 
@@ -54,9 +54,8 @@ export function evaluateAliasEnforcement(
     return { satisfied: false, reason: 'no-aliases' }
   }
 
-  const normalizedOwner = normalizeSuiAddress(owner)
   const hasOther = info.addressAliases.some(
-    (alias) => normalizeSuiAddress(alias) !== normalizedOwner,
+    (alias) => !addressesEqual(alias, owner),
   )
 
   return hasOther
