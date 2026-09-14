@@ -81,15 +81,15 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
-    "@vitest/browser-playwright": "^4.1.10",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
     "husky": "^9.1.7",
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "tsdown": "^0.22.14",
     "typedoc": "^0.28.20",
-    "typedoc-plugin-markdown": "^4.12.0",
+    "typedoc-plugin-markdown": "^4.13.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "scripts": {
     "clean": "rm -rf ./dist ./docs",
@@ -123,10 +123,10 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@mysten/sui": "^2.23.1",
+    "@mysten/sui": "^2.31.0",
     "@mysten/webcrypto-signer": "^0.1.2",
     "@mysten/wallet-standard": "^0.20.3",
-    "@scure/bip39": "^2.2.0"
+    "@scure/bip39": "^2.4.0"
   },
   "peerDependencies": {
     "@ledgerhq/hw-transport-webhid": "^6.0.0",
