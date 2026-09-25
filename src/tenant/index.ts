@@ -23,4 +23,7 @@
  * console.log(config.datahubHost)
  * ```
  */
+
+export { getMvrCache } from './mvr/mvrCache.generated'
+export { WORLD_TYPE_KEYS, type WorldTypeKey } from './mvr/worldTypeKeys'
 export * from './tenants'
