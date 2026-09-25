@@ -1,6 +1,6 @@
 {
   "name": "@evefrontier/wallet-core",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "core signing classes for Eve Frontier wallets",
   "author": "",
   "license": "MIT",
@@ -81,6 +81,7 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
+    "@mysten/mvr-static": "0.4.17",
     "@vitest/browser-playwright": "^4.1.11",
     "@vitest/coverage-v8": "^4.1.11",
     "husky": "^9.1.7",
@@ -95,6 +96,7 @@
     "clean": "rm -rf ./dist ./docs",
     "build": "tsdown",
     "build:watch": "tsdown --watch",
+    "gen:mvr": "mvr-static --directory src/tenant/mvr --include worldTypeKeys.ts --output src/tenant/mvr/mvrCache.generated.ts --force",
     "docs": "typedoc",
     "docs:md": "typedoc --plugin typedoc-plugin-markdown --out docs/markdown",
     "docs:serve": "typedoc && bunx serve docs/api",
@@ -148,5 +150,8 @@
     "brace-expansion": "^5.0.8",
     "postcss": "^8.5.23",
     "nanoid": "^3.3.18"
+  },
+  "patchedDependencies": {
+    "@mysten/mvr-static@0.4.17": "patches/@mysten%2Fmvr-static@0.4.17.patch"
   }
 }
