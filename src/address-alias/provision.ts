@@ -18,6 +18,7 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { generateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
+import type { AddressAliasesInfo } from './config'
 import type { LedgerProvisionedAlias } from './provision-ledger'
 import type { PasskeyProvisionedAlias } from './provision-passkey'
 import { getAddressAliases } from './query'
@@ -33,20 +34,20 @@ import { validateNewAddressAlias } from './validation'
 const ENABLE_RACE_REREAD_DELAYS_MS = [500, 1000, 1500]
 
 /**
- * Re-reads the `AddressAliases` object id, retrying a few times with short
+ * Re-reads the `AddressAliasesInfo`, retrying a few times with short
  * delays to ride out read-after-write lag on the indexer/read path.
  */
-async function retryForObjectId(
-  read: () => Promise<{ objectId?: string }>,
-): Promise<string | undefined> {
+async function retryForAddressAliasesInfo(
+  read: () => Promise<AddressAliasesInfo>,
+): Promise<AddressAliasesInfo> {
   for (const delayMs of ENABLE_RACE_REREAD_DELAYS_MS) {
-    const objectId = (await read()).objectId
-    if (objectId) {
-      return objectId
+    const info = await read()
+    if (info.objectId) {
+      return info
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
-  return (await read()).objectId
+  return await read()
 }
 
 /** Default BIP39 entropy strength in bits (24-word mnemonic). */
@@ -241,12 +242,20 @@ export async function registerAcknowledgedAlias({
       // and we can proceed straight to `add`. The read path can lag shortly
       // behind a very recent write, so retry the re-read a few times before
       // concluding the object genuinely does not exist.
-      aliasesObjectId = await retryForObjectId(() =>
+      const addressAliasInfo = await retryForAddressAliasesInfo(() =>
         getAddressAliases(suiClient, owner),
       )
-      if (!aliasesObjectId) {
+      if (!addressAliasInfo?.objectId) {
         throw enableError
       }
+      const validationError = validateNewAddressAlias({
+        addressAlias: aliasAddress,
+        existing: addressAliasInfo.addressAliases,
+      })
+      if (validationError) {
+        throw new Error(validationError)
+      }
+      aliasesObjectId = addressAliasInfo.objectId
     }
   }
 
