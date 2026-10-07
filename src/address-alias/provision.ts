@@ -238,10 +238,12 @@ export async function registerAcknowledgedAlias({
       // object at `0xa`, causing our `enable` to be rejected at the RPC/
       // consensus level (object version contention) rather than failing with
       // an on-chain `EAliasAlreadyExists` abort. Re-read live state before
-      // giving up: if the object now exists, someone else's `enable` landed
-      // and we can proceed straight to `add`. The read path can lag shortly
-      // behind a very recent write, so retry the re-read a few times before
-      // concluding the object genuinely does not exist.
+      // giving up: if the object now exists, someone else's `enable` landed.
+      // Revalidate the full alias list before `add`, since the other caller
+      // may already have added this alias or filled the available capacity.
+      // The read path can lag shortly behind a very recent write, so retry the
+      // re-read a few times before concluding the object genuinely does not
+      // exist.
       const addressAliasInfo = await retryForAddressAliasesInfo(() =>
         getAddressAliases(suiClient, owner),
       )
