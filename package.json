@@ -147,9 +147,10 @@
     }
   },
   "overrides": {
-    "brace-expansion": "^5.0.8",
+    "brace-expansion": "^5.0.11",
     "postcss": "^8.5.23",
-    "nanoid": "^3.3.18"
+    "nanoid": "^3.3.18",
+    "source-map-js": "^1.2.2"
   },
   "patchedDependencies": {
     "@mysten/mvr-static@0.4.17": "patches/@mysten%2Fmvr-static@0.4.17.patch"
