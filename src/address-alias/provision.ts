@@ -18,6 +18,7 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
 import { normalizeSuiAddress } from '@mysten/sui/utils'
 import { generateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
+import type { AddressAliasesInfo } from './config'
 import type { LedgerProvisionedAlias } from './provision-ledger'
 import type { PasskeyProvisionedAlias } from './provision-passkey'
 import { getAddressAliases } from './query'
@@ -28,6 +29,26 @@ import {
   type TransactionBytesSigner,
 } from './transaction'
 import { validateNewAddressAlias } from './validation'
+
+/** Delays (ms) between re-read attempts when recovering from an enable race. */
+const ENABLE_RACE_REREAD_DELAYS_MS = [500, 1000, 1500]
+
+/**
+ * Re-reads the `AddressAliasesInfo`, retrying a few times with short
+ * delays to ride out read-after-write lag on the indexer/read path.
+ */
+async function retryForAddressAliasesInfo(
+  read: () => Promise<AddressAliasesInfo>,
+): Promise<AddressAliasesInfo> {
+  for (const delayMs of ENABLE_RACE_REREAD_DELAYS_MS) {
+    const info = await read()
+    if (info.objectId) {
+      return info
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs))
+  }
+  return await read()
+}
 
 /** Default BIP39 entropy strength in bits (24-word mnemonic). */
 const MNEMONIC_STRENGTH_BITS = 256
@@ -152,6 +173,12 @@ export interface RegisterAcknowledgedAliasResult {
  *
  * Safe to retry: if a prior call minted the object but failed before `add`, a
  * subsequent call re-reads `enabled: true`, skips `enable`, and only runs `add`.
+ *
+ * Also safe under a genuine race: if a concurrent caller's `enable` wins
+ * (observed on devnet as a shared-object version-contention rejection on
+ * `AddressAliasState`, not an on-chain `EAliasAlreadyExists` abort), this
+ * re-reads live state before giving up and proceeds to `add` once the object
+ * is confirmed to exist.
  */
 export async function registerAcknowledgedAlias({
   suiClient,
@@ -187,22 +214,50 @@ export async function registerAcknowledgedAlias({
   let enableDigest: string | undefined
   let aliasesObjectId = aliasesInfo.objectId
   if (!aliasesInfo.enabled) {
-    // `enable` mints and transfers the object; its id comes from the effects.
-    const enableResult = await executeEnableAddressAliasTx({
-      suiClient,
-      sender: owner,
-      signer,
-      gasBudget,
-    })
-    enableDigest = enableResult.digest
-    aliasesObjectId = enableResult.objectId
+    try {
+      // `enable` mints and transfers the object; its id comes from the effects.
+      const enableResult = await executeEnableAddressAliasTx({
+        suiClient,
+        sender: owner,
+        signer,
+        gasBudget,
+      })
+      enableDigest = enableResult.digest
+      aliasesObjectId = enableResult.objectId
 
-    // Wait for the minted object to propagate so the `add` transaction below
-    // can resolve it as an input, then re-read as a fallback when the effects
-    // did not surface the id.
-    await suiClient.core.waitForTransaction({ digest: enableResult.digest })
-    if (!aliasesObjectId) {
-      aliasesObjectId = (await getAddressAliases(suiClient, owner)).objectId
+      // Wait for the minted object to propagate so the `add` transaction below
+      // can resolve it as an input, then re-read as a fallback when the effects
+      // did not surface the id.
+      await suiClient.core.waitForTransaction({ digest: enableResult.digest })
+      if (!aliasesObjectId) {
+        aliasesObjectId = (await getAddressAliases(suiClient, owner)).objectId
+      }
+    } catch (enableError) {
+      // A concurrent caller (e.g. EVE Vault and the game client registering
+      // at the same time) can win the race for the shared `AddressAliasState`
+      // object at `0xa`, causing our `enable` to be rejected at the RPC/
+      // consensus level (object version contention) rather than failing with
+      // an on-chain `EAliasAlreadyExists` abort. Re-read live state before
+      // giving up: if the object now exists, someone else's `enable` landed.
+      // Revalidate the full alias list before `add`, since the other caller
+      // may already have added this alias or filled the available capacity.
+      // The read path can lag shortly behind a very recent write, so retry the
+      // re-read a few times before concluding the object genuinely does not
+      // exist.
+      const addressAliasInfo = await retryForAddressAliasesInfo(() =>
+        getAddressAliases(suiClient, owner),
+      )
+      if (!addressAliasInfo?.objectId) {
+        throw enableError
+      }
+      const validationError = validateNewAddressAlias({
+        addressAlias: aliasAddress,
+        existing: addressAliasInfo.addressAliases,
+      })
+      if (validationError) {
+        throw new Error(validationError)
+      }
+      aliasesObjectId = addressAliasInfo.objectId
     }
   }
 

@@ -194,4 +194,139 @@ describe('registerAcknowledgedAlias', () => {
     expect(waitForTransaction).toHaveBeenCalledWith({ digest: 'enable-digest' })
     expect(listOwnedObjects).toHaveBeenCalledTimes(2)
   })
+
+  it('recovers when a concurrent caller wins the enable race', async () => {
+    vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
+      new Uint8Array([1]),
+    )
+    // Our enable attempt is rejected (shared-object version contention from a
+    // concurrent caller), then the add succeeds against the object they minted.
+    const executeTransaction = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error('Address alias transaction failed: rejected-digest'),
+      )
+      .mockResolvedValueOnce(successResult('add-digest'))
+    // First read (implicit): not enabled. Re-read after the failed enable:
+    // the concurrent caller's object is now visible.
+    const listOwnedObjects = vi
+      .fn()
+      .mockResolvedValueOnce({ objects: [] })
+      .mockResolvedValueOnce({
+        objects: [{ objectId: OBJECT_ID, json: { aliases: { contents: [] } } }],
+      })
+    const suiClient = {
+      core: { executeTransaction, listOwnedObjects },
+    } as never
+
+    await expect(
+      registerAcknowledgedAlias({
+        suiClient,
+        owner: OWNER,
+        signer: signer(),
+        aliasAddress: ALIAS,
+        acknowledged: true,
+      }),
+    ).resolves.toEqual({ addDigest: 'add-digest' })
+    expect(executeTransaction).toHaveBeenCalledTimes(2)
+    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects when the concurrent caller already added the same alias', async () => {
+    vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
+      new Uint8Array([1]),
+    )
+    const executeTransaction = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error('Address alias transaction failed: rejected-digest'),
+      )
+    const listOwnedObjects = vi
+      .fn()
+      .mockResolvedValueOnce({ objects: [] })
+      .mockResolvedValueOnce({
+        objects: [
+          { objectId: OBJECT_ID, json: { aliases: { contents: [ALIAS] } } },
+        ],
+      })
+    const suiClient = {
+      core: { executeTransaction, listOwnedObjects },
+    } as never
+
+    await expect(
+      registerAcknowledgedAlias({
+        suiClient,
+        owner: OWNER,
+        signer: signer(),
+        aliasAddress: ALIAS,
+        acknowledged: true,
+      }),
+    ).rejects.toThrow('Address is already an address alias')
+    expect(executeTransaction).toHaveBeenCalledTimes(1)
+    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects when the concurrent caller filled the alias capacity', async () => {
+    vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
+      new Uint8Array([1]),
+    )
+    const executeTransaction = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error('Address alias transaction failed: rejected-digest'),
+      )
+    const existingAliases = Array.from(
+      { length: 8 },
+      (_, aliasIndex) => `0x${(aliasIndex + 1).toString(16).padStart(64, '0')}`,
+    )
+    const listOwnedObjects = vi
+      .fn()
+      .mockResolvedValueOnce({ objects: [] })
+      .mockResolvedValueOnce({
+        objects: [
+          {
+            objectId: OBJECT_ID,
+            json: { aliases: { contents: existingAliases } },
+          },
+        ],
+      })
+    const suiClient = {
+      core: { executeTransaction, listOwnedObjects },
+    } as never
+
+    await expect(
+      registerAcknowledgedAlias({
+        suiClient,
+        owner: OWNER,
+        signer: signer(),
+        aliasAddress: ALIAS,
+        acknowledged: true,
+      }),
+    ).rejects.toThrow('Maximum of 8 address aliases reached')
+    expect(executeTransaction).toHaveBeenCalledTimes(1)
+    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+  })
+
+  it('rethrows the enable failure when the re-read still shows disabled', async () => {
+    vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
+      new Uint8Array([1]),
+    )
+    const enableError = new Error('Address alias transaction failed: boom')
+    const executeTransaction = vi.fn().mockRejectedValueOnce(enableError)
+    const listOwnedObjects = vi.fn().mockResolvedValue({ objects: [] })
+    const suiClient = {
+      core: { executeTransaction, listOwnedObjects },
+    } as never
+
+    await expect(
+      registerAcknowledgedAlias({
+        suiClient,
+        owner: OWNER,
+        signer: signer(),
+        aliasAddress: ALIAS,
+        acknowledged: true,
+      }),
+    ).rejects.toBe(enableError)
+    expect(executeTransaction).toHaveBeenCalledTimes(1)
+  })
 })
