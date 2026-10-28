@@ -184,7 +184,10 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
-    const result = await fetchUnsignedAddressAliasTransaction('enable', context)
+    const result = await fetchUnsignedAddressAliasTransaction(
+      { action: 'enable' },
+      context,
+    )
 
     expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -209,9 +212,8 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     )
 
     const result = await fetchUnsignedAddressAliasTransaction(
-      'add',
+      { action: 'add', personalAccessKeyAddress: ALIAS_ADDRESS },
       context,
-      ALIAS_ADDRESS,
     )
 
     expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-2' })
@@ -228,7 +230,11 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
-    await fetchUnsignedAddressAliasTransaction('enable', context, ALIAS_ADDRESS)
+    await fetchUnsignedAddressAliasTransaction(
+      // @ts-expect-error the address is only allowed for add
+      { action: 'enable', personalAccessKeyAddress: ALIAS_ADDRESS },
+      context,
+    )
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.any(String),
@@ -239,16 +245,25 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
   it.each([
     undefined,
     '',
+    ' ',
+    'hello',
+    '0x2',
+    `0x${'ab'.repeat(31)}`,
+    ` ${ALIAS_ADDRESS}`,
+    `${ALIAS_ADDRESS} `,
   ])('should throw invalid_input without calling fetch for add with address %j', async (address) => {
     const { context, fetchMock } = contextWithResponse(
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
     await expect(
-      fetchUnsignedAddressAliasTransaction('add', context, address),
+      fetchUnsignedAddressAliasTransaction(
+        { action: 'add', personalAccessKeyAddress: address as string },
+        context,
+      ),
     ).rejects.toMatchObject({
       code: 'invalid_input',
-      message: 'personal access key address is required for alias add',
+      message: 'personal access key address must be a valid Sui address',
     })
     expect(fetchMock).not.toHaveBeenCalled()
   })
@@ -260,7 +275,10 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
 
     await expect(
       // Bypass the type to exercise the runtime guard for JS callers.
-      fetchUnsignedAddressAliasTransaction('remove' as never, context),
+      fetchUnsignedAddressAliasTransaction(
+        { action: 'remove' } as never,
+        context,
+      ),
     ).rejects.toMatchObject({
       code: 'invalid_input',
       message: 'Unknown address alias action: remove',
@@ -275,7 +293,7 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     )
 
     await expect(
-      fetchUnsignedAddressAliasTransaction('enable', context),
+      fetchUnsignedAddressAliasTransaction({ action: 'enable' }, context),
     ).rejects.toMatchObject({
       code: 'invalid_input',
       message: 'API gateway token is not a decodable JWT',
@@ -290,7 +308,7 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     )
 
     const error = await fetchUnsignedAddressAliasTransaction(
-      'enable',
+      { action: 'enable' },
       context,
     ).catch((e: unknown) => e)
 
@@ -309,7 +327,7 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     )
 
     await expect(
-      fetchUnsignedAddressAliasTransaction('enable', context),
+      fetchUnsignedAddressAliasTransaction({ action: 'enable' }, context),
     ).rejects.toMatchObject({
       code: 'fetch_failed',
       httpStatus: 502,
@@ -323,7 +341,7 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     )
 
     await expect(
-      fetchUnsignedAddressAliasTransaction('enable', context),
+      fetchUnsignedAddressAliasTransaction({ action: 'enable' }, context),
     ).rejects.toMatchObject({
       code: 'invalid_shape',
       message:

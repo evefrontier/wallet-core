@@ -1,3 +1,4 @@
+import { isValidSuiAddress } from '@mysten/sui/utils'
 import { decodeEveClaims } from '#src/jwt'
 import { isNonEmptyString, isObjectRecord } from '#src/utils'
 import {
@@ -19,10 +20,16 @@ const VALID_TX_ACTIONS = new Set<string>(
   Object.values(SponsoredTransactionActions),
 )
 
-/** Gateway address alias preparation: `enable` aliasing, or `add` an alias. */
-export type AddressAliasAction = 'enable' | 'add'
+const ADDRESS_ALIAS_ACTIONS = ['enable', 'add'] as const
+const VALID_ADDRESS_ALIAS_ACTIONS = new Set<string>(ADDRESS_ALIAS_ACTIONS)
 
-const VALID_ADDRESS_ALIAS_ACTIONS = new Set<string>(['enable', 'add'])
+/** Gateway address alias preparation: `enable` aliasing, or `add` an alias. */
+export type AddressAliasAction = (typeof ADDRESS_ALIAS_ACTIONS)[number]
+
+/** Address alias preparation request; only `add` carries an address. */
+export type AddressAliasRequest =
+  | { action: 'enable' }
+  | { action: 'add'; personalAccessKeyAddress: string }
 
 /** Failure modes of the sponsored transaction API calls. */
 export type SponsoredTransactionErrorCode =
@@ -282,38 +289,40 @@ export async function executeSponsoredTransaction(
  * `personalAccessKeyAddress` as an alias. Sign the returned
  * `bcsDataB64Bytes`, then submit via {@link executeSponsoredTransaction}.
  *
- * The gateway returns rejections such as "already enabled" as `fetch_failed`
- * with the problem body in `raw`, so callers can inspect `raw.detail`.
+ * The gateway returns rejections as `fetch_failed` with the problem body in
+ * `raw`. `enable` on an account that already has aliasing enabled is answered
+ * with `httpStatus` 409, which is the signal to check. Other rejections have
+ * no stable error code, only a free-text `raw.detail`.
  *
  * @throws SponsoredTransactionError on invalid arguments (`invalid_input`),
  * non-OK responses (`fetch_failed`) or unexpected response shape
  * (`invalid_shape`).
  */
 export async function fetchUnsignedAddressAliasTransaction(
-  action: AddressAliasAction,
+  request: AddressAliasRequest,
   context: SponsoredTransactionApiContext,
-  personalAccessKeyAddress?: string,
 ): Promise<UnsignedSponsoredTransaction> {
-  if (!VALID_ADDRESS_ALIAS_ACTIONS.has(action)) {
+  // Guards JS callers, which the discriminated union does not cover.
+  if (!VALID_ADDRESS_ALIAS_ACTIONS.has(request.action)) {
     throw new SponsoredTransactionError(
       'invalid_input',
-      `Unknown address alias action: ${action}`,
+      `Unknown address alias action: ${request.action}`,
     )
   }
 
   const body: Record<string, unknown> = {}
-  if (action === 'add') {
-    if (!isNonEmptyString(personalAccessKeyAddress)) {
+  if (request.action === 'add') {
+    if (!isValidSuiAddress(request.personalAccessKeyAddress)) {
       throw new SponsoredTransactionError(
         'invalid_input',
-        'personal access key address is required for alias add',
+        'personal access key address must be a valid Sui address',
       )
     }
-    body.personalAccessKeyAddress = personalAccessKeyAddress
+    body.personalAccessKeyAddress = request.personalAccessKeyAddress
   }
 
   const { response, raw } = await postJson(
-    `v2/transactions/sponsored/address-aliases/${action}`,
+    `v2/transactions/sponsored/address-aliases/${request.action}`,
     body,
     context,
   )
