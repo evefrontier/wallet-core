@@ -17,6 +17,9 @@
  *   read from the token's `tenant` claim; failures throw
  *   `SponsoredTransactionError` for consumers to map to their own error
  *   surface.
+ * - `fetchUnsignedAddressAliasTransaction`, the same prepare step for
+ *   enabling address aliasing or adding an alias; execute it with
+ *   `executeSponsoredTransaction`.
  *
  * These exports are intended to be shared between transaction-building code and
  * wallet feature definitions so both sides agree on payload shape.

@@ -19,6 +19,11 @@ const VALID_TX_ACTIONS = new Set<string>(
   Object.values(SponsoredTransactionActions),
 )
 
+/** Gateway address alias preparation: `enable` aliasing, or `add` an alias. */
+export type AddressAliasAction = 'enable' | 'add'
+
+const VALID_ADDRESS_ALIAS_ACTIONS = new Set<string>(['enable', 'add'])
+
 /** Failure modes of the sponsored transaction API calls. */
 export type SponsoredTransactionErrorCode =
   | 'fetch_failed'
@@ -126,6 +131,39 @@ async function postJson(
   return { response, raw }
 }
 
+/** Maps a gateway preparation response to its unsigned transaction. */
+function parseUnsignedTransaction(
+  response: Response,
+  raw: unknown,
+  failureMessage: string,
+  apiName: string,
+): UnsignedSponsoredTransaction {
+  if (!response.ok) {
+    throw new SponsoredTransactionError(
+      'fetch_failed',
+      `${failureMessage}: ${response.status} ${response.statusText}`,
+      { httpStatus: response.status, raw },
+    )
+  }
+
+  if (
+    !isObjectRecord(raw) ||
+    !isNonEmptyString(raw.bcsDataB64Bytes) ||
+    !isNonEmptyString(raw.preparationId)
+  ) {
+    throw new SponsoredTransactionError(
+      'invalid_shape',
+      `${apiName} returned invalid shape: expected { bcsDataB64Bytes: string, preparationId: string }`,
+      { httpStatus: response.status, raw },
+    )
+  }
+
+  return {
+    bcsDataB64Bytes: raw.bcsDataB64Bytes,
+    preparationId: raw.preparationId,
+  }
+}
+
 /**
  * Requests an unsigned sponsored transaction from the API gateway for the
  * given assembly action. Sign the returned `bcsDataB64Bytes`, then submit
@@ -170,30 +208,12 @@ export async function fetchUnsignedSponsoredTransaction(
     context,
   )
 
-  if (!response.ok) {
-    throw new SponsoredTransactionError(
-      'fetch_failed',
-      `Failed to fetch sponsored transaction: ${response.status} ${response.statusText}`,
-      { httpStatus: response.status, raw },
-    )
-  }
-
-  if (
-    !isObjectRecord(raw) ||
-    !isNonEmptyString(raw.bcsDataB64Bytes) ||
-    !isNonEmptyString(raw.preparationId)
-  ) {
-    throw new SponsoredTransactionError(
-      'invalid_shape',
-      'Sponsored tx API returned invalid shape: expected { bcsDataB64Bytes: string, preparationId: string }',
-      { httpStatus: response.status, raw },
-    )
-  }
-
-  return {
-    bcsDataB64Bytes: raw.bcsDataB64Bytes,
-    preparationId: raw.preparationId,
-  }
+  return parseUnsignedTransaction(
+    response,
+    raw,
+    'Failed to fetch sponsored transaction',
+    'Sponsored tx API',
+  )
 }
 
 /**
@@ -254,4 +274,54 @@ export async function executeSponsoredTransaction(
     executionStatus,
     ...(executionErrorMessage !== undefined ? { executionErrorMessage } : {}),
   }
+}
+
+/**
+ * Requests an unsigned address alias transaction from the API gateway:
+ * `enable` turns on aliasing for the token's account, `add` registers
+ * `personalAccessKeyAddress` as an alias. Sign the returned
+ * `bcsDataB64Bytes`, then submit via {@link executeSponsoredTransaction}.
+ *
+ * The gateway returns rejections such as "already enabled" as `fetch_failed`
+ * with the problem body in `raw`, so callers can inspect `raw.detail`.
+ *
+ * @throws SponsoredTransactionError on invalid arguments (`invalid_input`),
+ * non-OK responses (`fetch_failed`) or unexpected response shape
+ * (`invalid_shape`).
+ */
+export async function fetchUnsignedAddressAliasTransaction(
+  action: AddressAliasAction,
+  context: SponsoredTransactionApiContext,
+  personalAccessKeyAddress?: string,
+): Promise<UnsignedSponsoredTransaction> {
+  if (!VALID_ADDRESS_ALIAS_ACTIONS.has(action)) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Unknown address alias action: ${action}`,
+    )
+  }
+
+  const body: Record<string, unknown> = {}
+  if (action === 'add') {
+    if (!isNonEmptyString(personalAccessKeyAddress)) {
+      throw new SponsoredTransactionError(
+        'invalid_input',
+        'personal access key address is required for alias add',
+      )
+    }
+    body.personalAccessKeyAddress = personalAccessKeyAddress
+  }
+
+  const { response, raw } = await postJson(
+    `v2/transactions/sponsored/address-aliases/${action}`,
+    body,
+    context,
+  )
+
+  return parseUnsignedTransaction(
+    response,
+    raw,
+    'Failed to prepare address alias transaction',
+    'Address alias API',
+  )
 }

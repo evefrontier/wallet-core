@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   executeSponsoredTransaction,
+  fetchUnsignedAddressAliasTransaction,
   fetchUnsignedSponsoredTransaction,
   SponsoredTransactionActions,
   type SponsoredTransactionApiContext,
@@ -172,6 +173,164 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     await expect(
       fetchUnsignedSponsoredTransaction(INPUT, context),
     ).rejects.toBe(failure)
+  })
+})
+
+describe('fetchUnsignedAddressAliasTransaction', () => {
+  const ALIAS_ADDRESS = `0x${'ab'.repeat(32)}`
+
+  it('should POST an empty body for enable with tenant and bearer headers', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+    )
+
+    const result = await fetchUnsignedAddressAliasTransaction('enable', context)
+
+    expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gateway.example/v2/transactions/sponsored/address-aliases/enable',
+      {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          Accept: 'application/json, application/problem+json',
+          'X-Tenant': 'stillness',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      },
+    )
+  })
+
+  it('should POST the personal access key address for add', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-2' }),
+    )
+
+    const result = await fetchUnsignedAddressAliasTransaction(
+      'add',
+      context,
+      ALIAS_ADDRESS,
+    )
+
+    expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-2' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gateway.example/v2/transactions/sponsored/address-aliases/add',
+      expect.objectContaining({
+        body: JSON.stringify({ personalAccessKeyAddress: ALIAS_ADDRESS }),
+      }),
+    )
+  })
+
+  it('should not send the address for enable', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+    )
+
+    await fetchUnsignedAddressAliasTransaction('enable', context, ALIAS_ADDRESS)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ body: '{}' }),
+    )
+  })
+
+  it.each([
+    undefined,
+    '',
+  ])('should throw invalid_input without calling fetch for add with address %j', async (address) => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+    )
+
+    await expect(
+      fetchUnsignedAddressAliasTransaction('add', context, address),
+    ).rejects.toMatchObject({
+      code: 'invalid_input',
+      message: 'personal access key address is required for alias add',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('should throw invalid_input without calling fetch on an unknown action', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+    )
+
+    await expect(
+      // Bypass the type to exercise the runtime guard for JS callers.
+      fetchUnsignedAddressAliasTransaction('remove' as never, context),
+    ).rejects.toMatchObject({
+      code: 'invalid_input',
+      message: 'Unknown address alias action: remove',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('should throw invalid_input without calling fetch when the token is not a JWT', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+      'not-a-jwt',
+    )
+
+    await expect(
+      fetchUnsignedAddressAliasTransaction('enable', context),
+    ).rejects.toMatchObject({
+      code: 'invalid_input',
+      message: 'API gateway token is not a decodable JWT',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('should throw fetch_failed with the problem body on non-OK responses', async () => {
+    const problem = { detail: 'address aliasing is already enabled' }
+    const { context } = contextWithResponse(
+      jsonResponse(problem, { status: 409, statusText: 'Conflict' }),
+    )
+
+    const error = await fetchUnsignedAddressAliasTransaction(
+      'enable',
+      context,
+    ).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(SponsoredTransactionError)
+    expect(error).toMatchObject({
+      code: 'fetch_failed',
+      message: 'Failed to prepare address alias transaction: 409 Conflict',
+      httpStatus: 409,
+      raw: problem,
+    })
+  })
+
+  it('should preserve raw: null when an error body is not JSON', async () => {
+    const { context } = contextWithResponse(
+      jsonResponse(undefined, { status: 502, statusText: 'Bad Gateway' }),
+    )
+
+    await expect(
+      fetchUnsignedAddressAliasTransaction('enable', context),
+    ).rejects.toMatchObject({
+      code: 'fetch_failed',
+      httpStatus: 502,
+      raw: null,
+    })
+  })
+
+  it('should throw invalid_shape when the OK response is missing fields', async () => {
+    const { context } = contextWithResponse(
+      jsonResponse({ preparationId: 'prep-1' }),
+    )
+
+    await expect(
+      fetchUnsignedAddressAliasTransaction('enable', context),
+    ).rejects.toMatchObject({
+      code: 'invalid_shape',
+      message:
+        'Address alias API returned invalid shape: expected { bcsDataB64Bytes: string, preparationId: string }',
+      httpStatus: 200,
+      raw: { preparationId: 'prep-1' },
+    })
   })
 })
 
