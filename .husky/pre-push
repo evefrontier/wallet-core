@@ -6,9 +6,5 @@ cd "$ROOT"
 
 . "$ROOT/scripts/husky-env.sh"
 
-# GHSA-g3hv-75wg-m249 (minimatch < 11.0.1) is ignored: it only reaches us through
-# typedoc (docs tooling, dev-only), which pins minimatch ^10 and calls matchOne,
-# an API minimatch 11 removed, so it cannot be upgraded yet. Drop the --ignore
-# once a typedoc release supports minimatch 11.
-bun audit --ignore GHSA-g3hv-75wg-m249
+bun audit
 bun run test
