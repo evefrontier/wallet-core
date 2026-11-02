@@ -9,6 +9,7 @@ import {
   generateAliasKey,
   registerAcknowledgedAlias,
 } from '#src/address-alias'
+import { aliasesObject, notFoundError } from './object-mocks'
 
 const OWNER = `0x${'a'.repeat(64)}`
 const OBJECT_ID = `0x${'b'.repeat(64)}`
@@ -70,10 +71,10 @@ describe('registerAcknowledgedAlias', () => {
 
   it('throws without acknowledgement and does not touch the chain', async () => {
     const executeTransaction = vi.fn()
-    const listOwnedObjects = vi.fn()
+    const getObject = vi.fn()
     await expect(
       registerAcknowledgedAlias({
-        suiClient: { core: { executeTransaction, listOwnedObjects } } as never,
+        suiClient: { core: { executeTransaction, getObject } } as never,
         owner: OWNER,
         signer: signer(),
         aliasAddress: ALIAS,
@@ -81,7 +82,7 @@ describe('registerAcknowledgedAlias', () => {
       }),
     ).rejects.toBeInstanceOf(AliasAcknowledgementRequiredError)
     expect(executeTransaction).not.toHaveBeenCalled()
-    expect(listOwnedObjects).not.toHaveBeenCalled()
+    expect(getObject).not.toHaveBeenCalled()
   })
 
   it('surfaces validation errors (duplicate alias)', async () => {
@@ -133,10 +134,10 @@ describe('registerAcknowledgedAlias', () => {
       .mockResolvedValueOnce(successResult('add-digest'))
     // Only the initial read runs; the object id comes from the enable effects,
     // so no post-enable re-read is needed.
-    const listOwnedObjects = vi.fn().mockResolvedValueOnce({ objects: [] })
+    const getObject = vi.fn().mockRejectedValueOnce(notFoundError())
     const waitForTransaction = vi.fn().mockResolvedValue(undefined)
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects, waitForTransaction },
+      core: { executeTransaction, getObject, waitForTransaction },
     } as never
 
     await expect(
@@ -153,7 +154,7 @@ describe('registerAcknowledgedAlias', () => {
     })
     expect(executeTransaction).toHaveBeenCalledTimes(2)
     expect(waitForTransaction).toHaveBeenCalledWith({ digest: 'enable-digest' })
-    expect(listOwnedObjects).toHaveBeenCalledTimes(1)
+    expect(getObject).toHaveBeenCalledTimes(1)
   })
 
   it('falls back to a re-read when effects omit the object id', async () => {
@@ -167,15 +168,13 @@ describe('registerAcknowledgedAlias', () => {
       .mockResolvedValueOnce(successResult('add-digest'))
     // First read (implicit, info omitted): not enabled. Second read (fallback
     // after waiting): enabled with an object id.
-    const listOwnedObjects = vi
+    const getObject = vi
       .fn()
-      .mockResolvedValueOnce({ objects: [] })
-      .mockResolvedValueOnce({
-        objects: [{ objectId: OBJECT_ID, json: { aliases: { contents: [] } } }],
-      })
+      .mockRejectedValueOnce(notFoundError())
+      .mockResolvedValueOnce(aliasesObject(OBJECT_ID, []))
     const waitForTransaction = vi.fn().mockResolvedValue(undefined)
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects, waitForTransaction },
+      core: { executeTransaction, getObject, waitForTransaction },
     } as never
 
     await expect(
@@ -192,7 +191,7 @@ describe('registerAcknowledgedAlias', () => {
     })
     expect(executeTransaction).toHaveBeenCalledTimes(2)
     expect(waitForTransaction).toHaveBeenCalledWith({ digest: 'enable-digest' })
-    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(2)
   })
 
   it('recovers when a concurrent caller wins the enable race', async () => {
@@ -209,14 +208,12 @@ describe('registerAcknowledgedAlias', () => {
       .mockResolvedValueOnce(successResult('add-digest'))
     // First read (implicit): not enabled. Re-read after the failed enable:
     // the concurrent caller's object is now visible.
-    const listOwnedObjects = vi
+    const getObject = vi
       .fn()
-      .mockResolvedValueOnce({ objects: [] })
-      .mockResolvedValueOnce({
-        objects: [{ objectId: OBJECT_ID, json: { aliases: { contents: [] } } }],
-      })
+      .mockRejectedValueOnce(notFoundError())
+      .mockResolvedValueOnce(aliasesObject(OBJECT_ID, []))
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects },
+      core: { executeTransaction, getObject },
     } as never
 
     await expect(
@@ -229,7 +226,7 @@ describe('registerAcknowledgedAlias', () => {
       }),
     ).resolves.toEqual({ addDigest: 'add-digest' })
     expect(executeTransaction).toHaveBeenCalledTimes(2)
-    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(2)
   })
 
   it('rejects when the concurrent caller already added the same alias', async () => {
@@ -241,16 +238,12 @@ describe('registerAcknowledgedAlias', () => {
       .mockRejectedValueOnce(
         new Error('Address alias transaction failed: rejected-digest'),
       )
-    const listOwnedObjects = vi
+    const getObject = vi
       .fn()
-      .mockResolvedValueOnce({ objects: [] })
-      .mockResolvedValueOnce({
-        objects: [
-          { objectId: OBJECT_ID, json: { aliases: { contents: [ALIAS] } } },
-        ],
-      })
+      .mockRejectedValueOnce(notFoundError())
+      .mockResolvedValueOnce(aliasesObject(OBJECT_ID, [ALIAS]))
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects },
+      core: { executeTransaction, getObject },
     } as never
 
     await expect(
@@ -263,7 +256,7 @@ describe('registerAcknowledgedAlias', () => {
       }),
     ).rejects.toThrow('Address is already an address alias')
     expect(executeTransaction).toHaveBeenCalledTimes(1)
-    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(2)
   })
 
   it('rejects when the concurrent caller filled the alias capacity', async () => {
@@ -279,19 +272,12 @@ describe('registerAcknowledgedAlias', () => {
       { length: 8 },
       (_, aliasIndex) => `0x${(aliasIndex + 1).toString(16).padStart(64, '0')}`,
     )
-    const listOwnedObjects = vi
+    const getObject = vi
       .fn()
-      .mockResolvedValueOnce({ objects: [] })
-      .mockResolvedValueOnce({
-        objects: [
-          {
-            objectId: OBJECT_ID,
-            json: { aliases: { contents: existingAliases } },
-          },
-        ],
-      })
+      .mockRejectedValueOnce(notFoundError())
+      .mockResolvedValueOnce(aliasesObject(OBJECT_ID, existingAliases))
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects },
+      core: { executeTransaction, getObject },
     } as never
 
     await expect(
@@ -304,7 +290,7 @@ describe('registerAcknowledgedAlias', () => {
       }),
     ).rejects.toThrow('Maximum of 8 address aliases reached')
     expect(executeTransaction).toHaveBeenCalledTimes(1)
-    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(2)
   })
 
   it('rethrows the enable failure when the re-read still shows disabled', async () => {
@@ -313,9 +299,9 @@ describe('registerAcknowledgedAlias', () => {
     )
     const enableError = new Error('Address alias transaction failed: boom')
     const executeTransaction = vi.fn().mockRejectedValueOnce(enableError)
-    const listOwnedObjects = vi.fn().mockResolvedValue({ objects: [] })
+    const getObject = vi.fn().mockRejectedValue(notFoundError())
     const suiClient = {
-      core: { executeTransaction, listOwnedObjects },
+      core: { executeTransaction, getObject },
     } as never
 
     await expect(

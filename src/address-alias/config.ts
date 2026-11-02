@@ -13,6 +13,12 @@ export const ADDRESS_ALIAS_STATE = '0xa'
 /** `sui` framework module. */
 export const ADDRESS_ALIAS_MODULE = '0x2::address_alias'
 
+/**
+ * Key type the per-address `AddressAliases` object id is derived with
+ * (`derived_object` under {@link ADDRESS_ALIAS_STATE}, keyed by the owner).
+ */
+export const ADDRESS_ALIAS_KEY_TYPE = '0x2::address_alias::AliasKey'
+
 /** Fully-qualified type of the per-address `AddressAliases` owned object. */
 export const ADDRESS_ALIASES_TYPE = '0x2::address_alias::AddressAliases'
 
