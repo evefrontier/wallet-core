@@ -123,7 +123,7 @@ describe('registerAcknowledgedAlias', () => {
     expect(executeTransaction).toHaveBeenCalledTimes(1)
   })
 
-  it('enables, resolves the object id from effects, then adds', async () => {
+  it('enables, then adds without reading the object back', async () => {
     vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
       new Uint8Array([1]),
     )
@@ -133,8 +133,8 @@ describe('registerAcknowledgedAlias', () => {
         enableResultWithEffects('enable-digest', OBJECT_ID),
       )
       .mockResolvedValueOnce(successResult('add-digest'))
-    // Only the initial read runs; the object id comes from the enable effects,
-    // so no post-enable re-read is needed.
+    // Only the initial read runs; the object id is derived from the owner, so
+    // no post-enable re-read is needed.
     const getObject = vi.fn().mockRejectedValueOnce(notFoundError())
     const waitForTransaction = vi.fn().mockResolvedValue(undefined)
     const suiClient = {
@@ -158,7 +158,7 @@ describe('registerAcknowledgedAlias', () => {
     expect(getObject).toHaveBeenCalledTimes(1)
   })
 
-  it('falls back to a re-read when effects omit the object id', async () => {
+  it('does not re-read when the enable effects omit the object id', async () => {
     vi.spyOn(Transaction.prototype, 'build').mockResolvedValue(
       new Uint8Array([1]),
     )
@@ -167,12 +167,9 @@ describe('registerAcknowledgedAlias', () => {
       .fn()
       .mockResolvedValueOnce(successResult('enable-digest'))
       .mockResolvedValueOnce(successResult('add-digest'))
-    // First read (implicit, info omitted): not enabled. Second read (fallback
-    // after waiting): enabled with an object id.
-    const getObject = vi
-      .fn()
-      .mockRejectedValueOnce(notFoundError())
-      .mockResolvedValueOnce(aliasesObject(OBJECT_ID, []))
+    // Only the initial read (info omitted) runs: the id is derived, so the
+    // missing effects do not matter.
+    const getObject = vi.fn().mockRejectedValueOnce(notFoundError())
     const waitForTransaction = vi.fn().mockResolvedValue(undefined)
     const suiClient = {
       core: { executeTransaction, getObject, waitForTransaction },
@@ -192,7 +189,7 @@ describe('registerAcknowledgedAlias', () => {
     })
     expect(executeTransaction).toHaveBeenCalledTimes(2)
     expect(waitForTransaction).toHaveBeenCalledWith({ digest: 'enable-digest' })
-    expect(getObject).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(1)
   })
 
   it('recovers when a concurrent caller wins the enable race', async () => {

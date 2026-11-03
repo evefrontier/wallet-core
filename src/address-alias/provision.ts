@@ -21,7 +21,7 @@ import { wordlist } from '@scure/bip39/wordlists/english.js'
 import type { AddressAliasesInfo } from './config'
 import type { LedgerProvisionedAlias } from './provision-ledger'
 import type { PasskeyProvisionedAlias } from './provision-passkey'
-import { getAddressAliases } from './query'
+import { addressAliasesObjectId, getAddressAliases } from './query'
 import {
   addAddressAliasTxBytes,
   executeAddressAliasTx,
@@ -164,9 +164,8 @@ export interface RegisterAcknowledgedAliasResult {
  * acknowledgement.
  *
  * Mints the owner's `AddressAliases` object first when it does not exist yet
- * (`enable` transfers the minted object internally, so its id is read from the
- * enable transaction effects, with a re-read as a fallback — enable and add
- * cannot share one PTB). Throws
+ * (enable and add cannot share one PTB). The object id is derived from the
+ * owner, so `add` targets it without reading it back after `enable`. Throws
  * {@link AliasAcknowledgementRequiredError} when not acknowledged, or a
  * validation error when the alias address is invalid, self, a duplicate, or
  * over the maximum.
@@ -212,10 +211,11 @@ export async function registerAcknowledgedAlias({
   }
 
   let enableDigest: string | undefined
-  let aliasesObjectId = aliasesInfo.objectId
+  // The object id is derived from the owner, so it is known before `enable`
+  // mints the object and needs no read after it.
+  const aliasesObjectId = addressAliasesObjectId(owner)
   if (!aliasesInfo.enabled) {
     try {
-      // `enable` mints and transfers the object; its id comes from the effects.
       const enableResult = await executeEnableAddressAliasTx({
         suiClient,
         sender: owner,
@@ -223,15 +223,10 @@ export async function registerAcknowledgedAlias({
         gasBudget,
       })
       enableDigest = enableResult.digest
-      aliasesObjectId = enableResult.objectId
 
       // Wait for the minted object to propagate so the `add` transaction below
-      // can resolve it as an input, then re-read as a fallback when the effects
-      // did not surface the id.
+      // can resolve it as an input.
       await suiClient.core.waitForTransaction({ digest: enableResult.digest })
-      if (!aliasesObjectId) {
-        aliasesObjectId = (await getAddressAliases(suiClient, owner)).objectId
-      }
     } catch (enableError) {
       // A concurrent caller (e.g. EVE Vault and the game client registering
       // at the same time) can win the race for the shared `AddressAliasState`
@@ -247,7 +242,7 @@ export async function registerAcknowledgedAlias({
       const addressAliasInfo = await retryForAddressAliasesInfo(() =>
         getAddressAliases(suiClient, owner),
       )
-      if (!addressAliasInfo?.objectId) {
+      if (!addressAliasInfo.enabled) {
         throw enableError
       }
       const validationError = validateNewAddressAlias({
@@ -257,15 +252,9 @@ export async function registerAcknowledgedAlias({
       if (validationError) {
         throw new Error(validationError)
       }
-      aliasesObjectId = addressAliasInfo.objectId
     }
   }
 
-  if (!aliasesObjectId) {
-    throw new Error(
-      'Address aliases object was not found after enabling; cannot register alias.',
-    )
-  }
   const addDigest = await executeAddressAliasTx({
     suiClient,
     sender: owner,
