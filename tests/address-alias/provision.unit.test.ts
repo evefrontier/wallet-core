@@ -6,13 +6,14 @@ import { wordlist } from '@scure/bip39/wordlists/english.js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   AliasAcknowledgementRequiredError,
+  addressAliasesObjectId,
   generateAliasKey,
   registerAcknowledgedAlias,
 } from '#src/address-alias'
 import { aliasesObject, notFoundError } from './object-mocks'
 
 const OWNER = `0x${'a'.repeat(64)}`
-const OBJECT_ID = `0x${'b'.repeat(64)}`
+const OBJECT_ID = addressAliasesObjectId(OWNER)
 const ALIAS = `0x${'c'.repeat(64)}`
 
 afterEach(() => {

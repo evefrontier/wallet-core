@@ -9,7 +9,7 @@ import {
 import { aliasesObject, notFoundError } from './object-mocks'
 
 const OWNER = `0x${'a'.repeat(64)}`
-const OBJECT_ID = `0x${'b'.repeat(64)}`
+const OBJECT_ID = addressAliasesObjectId(OWNER)
 const ALIAS = `0x${'c'.repeat(64)}`
 
 // Captured from a real devnet/testnet enable: the owner and the AddressAliases
@@ -57,7 +57,9 @@ describe('addressAliasesObjectId', () => {
 
 describe('getAddressAliases', () => {
   it('should read the derived object id with its JSON view', async () => {
-    const getObject = vi.fn().mockResolvedValue(aliasesObject(OBJECT_ID, []))
+    const getObject = vi
+      .fn()
+      .mockResolvedValue(aliasesObject(GOLDEN_OBJECT_ID, []))
 
     await getAddressAliases(clientWith(getObject), GOLDEN_OWNER)
 
@@ -123,6 +125,61 @@ describe('getAddressAliases', () => {
     await expect(
       getAddressAliases(clientWith(getObject), OWNER),
     ).rejects.toThrow(`expected ${ADDRESS_ALIASES_TYPE}`)
+  })
+
+  it('should reject an object whose id is not the derived id', async () => {
+    const otherId = `0x${'d'.repeat(64)}`
+    const getObject = vi.fn().mockResolvedValue(aliasesObject(otherId, [ALIAS]))
+
+    await expect(
+      getAddressAliases(clientWith(getObject), OWNER),
+    ).rejects.toThrow(`Read object ${otherId}`)
+  })
+
+  it('should accept the object id in another case', async () => {
+    const getObject = vi.fn().mockResolvedValue({
+      object: {
+        objectId: `0x${OBJECT_ID.slice(2).toUpperCase()}`,
+        type: ADDRESS_ALIASES_TYPE,
+        json: { aliases: { contents: [ALIAS] } },
+      },
+    })
+
+    await expect(
+      getAddressAliases(clientWith(getObject), OWNER),
+    ).resolves.toEqual({
+      enabled: true,
+      objectId: OBJECT_ID,
+      addressAliases: [ALIAS],
+    })
+  })
+
+  it.each([
+    ['no JSON view', undefined],
+    ['null JSON', null],
+    ['no aliases field', {}],
+    ['no contents', { aliases: {} }],
+    ['non-array contents', { aliases: { contents: 'oops' } }],
+  ])('should reject an existing object with %s', async (_name, json) => {
+    const getObject = vi.fn().mockResolvedValue({
+      object: { objectId: OBJECT_ID, type: ADDRESS_ALIASES_TYPE, json },
+    })
+
+    await expect(
+      getAddressAliases(clientWith(getObject), OWNER),
+    ).rejects.toThrow('has no alias list in its JSON view')
+  })
+
+  it('should return an empty list for an enabled object with no aliases', async () => {
+    const getObject = vi.fn().mockResolvedValue(aliasesObject(OBJECT_ID, []))
+
+    await expect(
+      getAddressAliases(clientWith(getObject), OWNER),
+    ).resolves.toEqual({
+      enabled: true,
+      objectId: OBJECT_ID,
+      addressAliases: [],
+    })
   })
 
   it('should rethrow a transport failure instead of reporting not enabled', async () => {

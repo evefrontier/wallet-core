@@ -1,6 +1,10 @@
 import { bcs } from '@mysten/sui/bcs'
 import type { ClientWithCoreApi } from '@mysten/sui/client'
-import { deriveObjectID, normalizeStructTag } from '@mysten/sui/utils'
+import {
+  deriveObjectID,
+  normalizeStructTag,
+  normalizeSuiAddress,
+} from '@mysten/sui/utils'
 import {
   ADDRESS_ALIAS_KEY_TYPE,
   ADDRESS_ALIAS_STATE,
@@ -34,6 +38,16 @@ export function addressAliasesObjectId(owner: string): string {
  * depend on an owned-objects index. Returns `enabled: false` when the object
  * does not exist; any other failure (transport, timeout) is thrown rather than
  * reported as "not enabled".
+ *
+ * "Does not exist" is only as fresh as the node or index answering: a
+ * load-balanced fullnode that is a few checkpoints behind, or a GraphQL indexer
+ * behind its watermark, can still report not found shortly after `enable`.
+ * Callers that act on a negative result should confirm it against a current
+ * source or retry.
+ *
+ * An object that exists but is not an `AddressAliases` with this id, or whose
+ * JSON view has no alias list, is thrown as an error rather than read as having
+ * no aliases.
  */
 export async function getAddressAliases(
   client: ClientWithCoreApi,
@@ -57,11 +71,31 @@ export async function getAddressAliases(
     )
   }
 
+  if (normalizeSuiAddress(object.objectId) !== objectId) {
+    throw new Error(
+      `Read object ${object.objectId} for address aliases object ${objectId}`,
+    )
+  }
+
+  // An empty list reads as "no aliases", so a JSON view without the list must
+  // not pass as one.
+  if (!hasAliasList(object.json)) {
+    throw new Error(
+      `Address aliases object ${objectId} has no alias list in its JSON view`,
+    )
+  }
+
   return {
     enabled: true,
-    objectId: object.objectId,
+    objectId,
     addressAliases: parseAddressAliases(object.json),
   }
+}
+
+function hasAliasList(json: unknown): boolean {
+  return Array.isArray(
+    (json as { aliases?: { contents?: unknown } } | null)?.aliases?.contents,
+  )
 }
 
 /**

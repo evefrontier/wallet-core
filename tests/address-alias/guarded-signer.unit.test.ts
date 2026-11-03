@@ -223,7 +223,9 @@ describe('createOnChainStatusResolver', () => {
   it('reads on-chain state each call', async () => {
     const getObject = vi
       .fn()
-      .mockResolvedValue(aliasesObject('0x1', [`0x${'c'.repeat(64)}`]))
+      .mockImplementation(async ({ objectId }: { objectId: string }) =>
+        aliasesObject(objectId, [`0x${'c'.repeat(64)}`]),
+      )
     const client = { core: { getObject } } as never
     const resolve = createOnChainStatusResolver(client, OWNER)
 

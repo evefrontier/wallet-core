@@ -76,10 +76,10 @@ describe('checkAliasEnforcement', () => {
   function clientWithAliases(aliases: string[] | null) {
     const getObject = vi
       .fn()
-      .mockImplementation(async () =>
+      .mockImplementation(async ({ objectId }: { objectId: string }) =>
         aliases === null
           ? Promise.reject(notFoundError())
-          : aliasesObject(`0x${'1'.padStart(64, '0')}`, aliases),
+          : aliasesObject(objectId, aliases),
       )
     return { client: { core: { getObject } } as never }
   }
