@@ -204,8 +204,8 @@ export interface EnableAddressAliasResult {
   digest: string
   /**
    * The minted `AddressAliases` object id, read directly from the transaction
-   * effects. Undefined only if it could not be located in the effects (the
-   * caller should then fall back to a read after the transaction propagates).
+   * effects. Undefined if it could not be located in the effects; the id is
+   * also derivable from the owner with `addressAliasesObjectId`.
    */
   objectId?: string | undefined
 }
@@ -213,10 +213,6 @@ export interface EnableAddressAliasResult {
 /**
  * Signs and executes the `enable` transaction, resolving the minted
  * `AddressAliases` object id from the transaction effects.
- *
- * Reading the id from effects avoids the read-after-write race that a fresh
- * owned-object query hits: right after execution the newly minted object is not
- * yet visible to the read path, so listing owned objects can miss it.
  */
 export async function executeEnableAddressAliasTx({
   suiClient,

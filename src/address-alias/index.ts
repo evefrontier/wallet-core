@@ -20,7 +20,8 @@
  * The address-alias entrypoint groups together:
  *
  * - constants and the `AddressAliasesInfo` read model
- * - `getAddressAliases`, the owned-object read path
+ * - `getAddressAliases`, a point read of the owner's `AddressAliases` object by
+ *   its derived id (`addressAliasesObjectId`)
  * - transaction builders for `enable`, `add`, and `remove`, plus
  *   `executeAddressAliasTx` to sign and execute them
  * - `validateNewAddressAlias` / `validateExistingAddressAlias` input checks
@@ -92,6 +93,7 @@
  * ```
  */
 export {
+  ADDRESS_ALIAS_KEY_TYPE,
   ADDRESS_ALIAS_MODULE,
   ADDRESS_ALIAS_STATE,
   ADDRESS_ALIASES_TYPE,
@@ -140,7 +142,11 @@ export {
   type RecoverPasskeyKeypairParams,
   recoverPasskeyKeypair,
 } from './provision-passkey'
-export { getAddressAliases, parseAddressAliases } from './query'
+export {
+  addressAliasesObjectId,
+  getAddressAliases,
+  parseAddressAliases,
+} from './query'
 export { isAddressAliasCall, isRecord } from './risk'
 export {
   addAddressAliasTx,

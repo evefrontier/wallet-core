@@ -7,6 +7,7 @@ import {
   evaluateAliasEnforcement,
   hasEnforceableAlias,
 } from '#src/address-alias'
+import { aliasesObject, notFoundError } from './object-mocks'
 
 const OWNER = `0x${'a'.repeat(64)}`
 const ALIAS = `0x${'c'.repeat(64)}`
@@ -72,22 +73,26 @@ describe('hasEnforceableAlias', () => {
 })
 
 describe('checkAliasEnforcement', () => {
-  function clientWithObjects(objects: unknown[]) {
-    const listOwnedObjects = vi.fn().mockResolvedValue({ objects })
-    return { client: { core: { listOwnedObjects } } as never }
+  function clientWithAliases(aliases: string[] | null) {
+    const getObject = vi
+      .fn()
+      .mockImplementation(async ({ objectId }: { objectId: string }) =>
+        aliases === null
+          ? Promise.reject(notFoundError())
+          : aliasesObject(objectId, aliases),
+      )
+    return { client: { core: { getObject } } as never }
   }
 
   it('reads on-chain aliases and evaluates the policy', async () => {
-    const { client } = clientWithObjects([
-      { objectId: '0x1', json: { aliases: { contents: [ALIAS] } } },
-    ])
+    const { client } = clientWithAliases([ALIAS])
     await expect(checkAliasEnforcement(client, OWNER)).resolves.toEqual({
       satisfied: true,
     })
   })
 
   it('is not satisfied when no aliases object exists', async () => {
-    const { client } = clientWithObjects([])
+    const { client } = clientWithAliases(null)
     await expect(checkAliasEnforcement(client, OWNER)).resolves.toEqual({
       satisfied: false,
       reason: 'no-aliases-object',

@@ -6,6 +6,7 @@ import {
   createAliasEnforcedSigner,
   createOnChainStatusResolver,
 } from '#src/address-alias'
+import { aliasesObject } from './object-mocks'
 
 const OWNER = `0x${'a'.repeat(64)}`
 const SATISFIED: AliasEnforcementStatus = { satisfied: true }
@@ -220,20 +221,17 @@ describe('createAliasEnforcedSigner - pass-throughs', () => {
 
 describe('createOnChainStatusResolver', () => {
   it('reads on-chain state each call', async () => {
-    const listOwnedObjects = vi.fn().mockResolvedValue({
-      objects: [
-        {
-          objectId: '0x1',
-          json: { aliases: { contents: [`0x${'c'.repeat(64)}`] } },
-        },
-      ],
-    })
-    const client = { core: { listOwnedObjects } } as never
+    const getObject = vi
+      .fn()
+      .mockImplementation(async ({ objectId }: { objectId: string }) =>
+        aliasesObject(objectId, [`0x${'c'.repeat(64)}`]),
+      )
+    const client = { core: { getObject } } as never
     const resolve = createOnChainStatusResolver(client, OWNER)
 
     await expect(resolve()).resolves.toEqual({ satisfied: true })
-    expect(listOwnedObjects).toHaveBeenCalledTimes(1)
+    expect(getObject).toHaveBeenCalledTimes(1)
     await resolve()
-    expect(listOwnedObjects).toHaveBeenCalledTimes(2)
+    expect(getObject).toHaveBeenCalledTimes(2)
   })
 })
