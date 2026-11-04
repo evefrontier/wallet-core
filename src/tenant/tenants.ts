@@ -125,7 +125,7 @@ const TENANT_SOURCE: Record<TenantId, TenantSource> = {
   [TenantId.LIMINALITY]: {
     mvrName: '@evefrontier/world',
     currencyMvrName: '@evefrontier/currency',
-    datahubHost: 'world-api-liminality.live.pub.evefrontier.com',
+    datahubHost: 'world-api-liminality.ptu.pub.evefrontier.com',
   },
 }
 
