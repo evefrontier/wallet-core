@@ -2,7 +2,7 @@ import { TenantId } from '#src/tenant'
 import { decodeEveClaims, type EveJwtClaims } from './claims'
 
 /** API tiers accepted in the JWT `tier` claim. @category Constants */
-export const VALID_TIERS = ['dev', 'test', 'uat', 'live'] as const
+export const VALID_TIERS = ['dev', 'test', 'uat', 'ptu', 'live'] as const
 
 /**
  * Canonical `{tier}`-templated API-gateway host for {@link getApiContext}'s
@@ -19,7 +19,7 @@ const VALID_TIER_SET: ReadonlySet<string> = new Set(VALID_TIERS)
 /**
  * Resolves the effective API tier for a tenant/claims combination.
  *
- * `stillness`/`liminality` default to `live` and unlisted tenants to `test`,
+ * `stillness` defaults to `live`, `liminality` to `ptu` and unlisted tenants to `test`,
  * but an explicit `tier` claim overrides both. `utopia`/`umbra` are always
  * `uat`.
  */
@@ -30,7 +30,7 @@ export function resolveEveTier(
     case TenantId.STILLNESS:
       return claims.tier || 'live'
     case TenantId.LIMINALITY:
-      return claims.tier || 'live'
+      return claims.tier || 'ptu'
     case TenantId.UTOPIA:
       return 'uat'
     case TenantId.UMBRA:
