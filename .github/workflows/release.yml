@@ -1,10 +1,18 @@
-# Build and publish wallet-core to GitHub Package Registry on release or manual run.
+# Build and publish wallet-core to GitHub Package Registry on release. A manual
+# run only builds.
 name: Release
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+
+# Jobs declare the permissions they need; anything else gets none.
+permissions: {}
+
+# Release builds must not restore caches that other workflows could have
+# written (cache poisoning). This covers the setup-bun and setup-node caches.
+cache-mode: none
 
 jobs:
   build-and-publish:
@@ -34,8 +42,14 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Configure registry auth
-        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-
+      # Manual runs only build, so a dispatch can be used to test the
+      # workflow without publishing. The token goes through env, not ${{ }}
+      # in run. Trusted publishing is npmjs.com-only and doesn't apply to
+      # GitHub Packages.
       - name: Publish
-        run: bun publish
+        if: github.event_name == 'release'
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: | # zizmor: ignore[use-trusted-publishing]
+          echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" >> .npmrc
+          bun publish

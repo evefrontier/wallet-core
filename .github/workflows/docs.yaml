@@ -3,6 +3,16 @@ name: Documentation
 on:
   release:
     types: [published]
+  # A manual run only builds the docs; deploy-docs is skipped, so this can be
+  # used to test the workflow without publishing to GitHub Pages.
+  workflow_dispatch:
+
+# Jobs declare the permissions they need; anything else gets none.
+permissions: {}
+
+# Release builds must not restore caches that other workflows could have
+# written (cache poisoning). This covers the setup-bun and setup-node caches.
+cache-mode: none
 
 jobs:
   build-docs:
@@ -12,6 +22,8 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

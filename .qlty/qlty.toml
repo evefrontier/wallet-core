@@ -62,9 +62,6 @@ default = true
 
 
 [[plugin]]
-name = "actionlint"
-
-[[plugin]]
 name = "biome"
 version = "2.4.15"
 
@@ -74,6 +71,3 @@ mode = "comment"
 
 [[plugin]]
 name = "trufflehog"
-
-[[plugin]]
-name = "zizmor"
