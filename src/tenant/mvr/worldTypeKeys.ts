@@ -24,6 +24,10 @@ export const WORLD_TYPE_KEYS = [
   'inventory::ItemMintedEvent',
   'status::StatusChangedEvent',
   'fuel::FuelEvent',
+  // world-contracts core (entity model); resolved under `@evefrontier/world-core-<tier>`
+  'entity_key::EntityKey',
+  'access_cap::AccessCap',
+  'entity::Entity',
 ] as const
 
 export type WorldTypeKey = (typeof WORLD_TYPE_KEYS)[number]
@@ -79,6 +83,19 @@ export const MVR_SCAN_SEED = [
   '@evefrontier/world-uat::inventory::ItemMintedEvent',
   '@evefrontier/world-uat::status::StatusChangedEvent',
   '@evefrontier/world-uat::fuel::FuelEvent',
+] as const
+
+/**
+ * world-contracts core package MVR literals, read by the `@mysten/mvr-static`
+ * scanner. Core keeps `object_registry::ObjectRegistry` at the same path as the
+ * archived world package. Only tiers whose core name is registered on MVR are
+ * listed; add `world-core-test`/`-uat`/live as they are published.
+ */
+export const CORE_MVR_SCAN_SEED = [
+  '@evefrontier/world-core-dev::entity_key::EntityKey',
+  '@evefrontier/world-core-dev::object_registry::ObjectRegistry',
+  '@evefrontier/world-core-dev::access_cap::AccessCap',
+  '@evefrontier/world-core-dev::entity::Entity',
 ] as const
 
 /**
