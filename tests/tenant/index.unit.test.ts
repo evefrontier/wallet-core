@@ -2,19 +2,25 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_TENANT,
   EVE_PACKAGE_ID_BY_TENANT,
+  getTenantWorldPackageId,
   getTenantWorldType,
+  getWorldPackageId,
+  getWorldType,
   TENANT_CONFIG,
   TenantId,
+  WORLD_PACKAGES,
+  WORLD_TYPE_KEYS,
+  worldMvrName,
 } from '#src/tenant'
 
-// Type-origin package ids registered under the `@evefrontier/world*` MVR names
-// (testnet), i.e. what the embedded cache resolves to.
-const WORLD_TEST =
-  '0x353988e063b4683580e3603dbe9e91fefd8f6a06263a646d43fd3a2f3ef6b8c1'
-const WORLD_UAT =
-  '0x28eab6a6e9e12808a15901b12fcd3adfb07317d716dcaeb3f2965e25c7da0230'
-const WORLD =
-  '0x7be18d6294e533bedd9a5d70a96ce8d9d4b87a7c74188ba65d3fe966bbed9d92'
+// Type-origin package ids registered under the `@evefrontier/world-*-dev` MVR
+// names (testnet), i.e. what the embedded cache resolves to.
+const WORLD_CORE_DEV =
+  '0x0a4f1548929e834800da94990c419bc1ca63a836eeed517aada08788e2f00bca'
+const WORLD_CHARACTER_DEV =
+  '0x029e9cc9bdceb44ede8b3f848ddaae972f059641ededc5609255a04ea402ff17'
+const WORLD_GENERIC_MODULE_DEV =
+  '0x83e72009135503c350f723cbfedc19d13c0aa5366dfd56ab4b0f1eb6a49f7292'
 
 // EVE token package ids (type-origin of `EVE::EVE`) registered under the
 // `@evefrontier/currency*` MVR names (testnet), i.e. what the embedded cache
@@ -23,6 +29,8 @@ const EVE_TEST =
   '0x6407060579895a8b30f7d30d2447046eb80ecc23f0c9acde09222b2a505583c9'
 const EVE_UAT =
   '0x5a575ae8d55c0ee9a4486a5a7d227e682679ef3e34fe19ff3cac6bd17a04ccd6'
+const EVE_PTU =
+  '0xf298ea7a927237f0cd045ff5926ecdde59bb469b69fa42e70dd47eb0f5feb21a'
 const EVE = '0xc663658ff707985246bc7b5c605a458ec2caea28bfc35c253eb526dcf961643e'
 
 describe('tenant', () => {
@@ -30,57 +38,85 @@ describe('tenant', () => {
     expect(DEFAULT_TENANT).toBe(TenantId.STILLNESS)
   })
 
-  describe('TENANT_CONFIG world package id derivation', () => {
-    it('resolves the four world-test tenants to the shared test package', () => {
+  describe('TENANT_CONFIG world tier', () => {
+    it('puts the four test tenants on the test tier', () => {
       for (const id of [
         TenantId.TAUCETI,
         TenantId.TIAKI,
         TenantId.TESSERACT,
         TenantId.TETRA,
       ]) {
-        expect(TENANT_CONFIG[id].mvrName).toBe('@evefrontier/world-test')
-        expect(TENANT_CONFIG[id].packageId).toBe(WORLD_TEST)
+        expect(TENANT_CONFIG[id].worldTier).toBe('test')
       }
     })
 
-    it('resolves utopia/umbra to the world-uat package (not the stale 0xd12a70c)', () => {
+    it('puts utopia/umbra on the uat tier', () => {
       for (const id of [TenantId.UTOPIA, TenantId.UMBRA]) {
-        expect(TENANT_CONFIG[id].mvrName).toBe('@evefrontier/world-uat')
-        expect(TENANT_CONFIG[id].packageId).toBe(WORLD_UAT)
+        expect(TENANT_CONFIG[id].worldTier).toBe('uat')
       }
     })
 
-    it('resolves stillness/liminality to the @evefrontier/world package', () => {
-      for (const id of [TenantId.STILLNESS, TenantId.LIMINALITY]) {
-        expect(TENANT_CONFIG[id].mvrName).toBe('@evefrontier/world')
-        expect(TENANT_CONFIG[id].packageId).toBe(WORLD)
+    it('puts stillness on live and only liminality on ptu', () => {
+      expect(TENANT_CONFIG[TenantId.STILLNESS].worldTier).toBe('live')
+      expect(TENANT_CONFIG[TenantId.LIMINALITY].worldTier).toBe('ptu')
+      expect(
+        Object.values(TENANT_CONFIG).filter((c) => c.worldTier === 'ptu'),
+      ).toHaveLength(1)
+    })
+  })
+
+  describe('worldMvrName', () => {
+    it('suffixes the tier and dashes the package name', () => {
+      expect(worldMvrName('character', 'dev')).toBe(
+        '@evefrontier/world-character-dev',
+      )
+      expect(worldMvrName('generic_module', 'ptu')).toBe(
+        '@evefrontier/world-generic-module-ptu',
+      )
+    })
+
+    it('has no suffix on the live tier', () => {
+      expect(worldMvrName('core', 'live')).toBe('@evefrontier/world-core')
+    })
+  })
+
+  describe('getWorldType', () => {
+    it('resolves every key on the dev tier', () => {
+      for (const key of WORLD_TYPE_KEYS) {
+        expect(getWorldType('dev', key)).toMatch(/^0x[0-9a-f]+::/)
       }
     })
 
-    it('covers every TenantId with a resolved config', () => {
-      for (const id of Object.values(TenantId)) {
-        expect(TENANT_CONFIG[id]?.packageId).toMatch(/^0x[0-9a-f]+$/)
+    it('returns type-origin tags under each package', () => {
+      expect(getWorldType('dev', 'character::identity::Identity')).toBe(
+        `${WORLD_CHARACTER_DEV}::identity::Identity`,
+      )
+      expect(
+        getWorldType('dev', 'generic_module::generic_module::GenericModule'),
+      ).toBe(`${WORLD_GENERIC_MODULE_DEV}::generic_module::GenericModule`)
+    })
+  })
+
+  describe('getWorldPackageId', () => {
+    it('anchors core on ObjectRegistry', () => {
+      expect(getWorldPackageId('dev', 'core')).toBe(WORLD_CORE_DEV)
+    })
+
+    it('resolves every package on the dev tier', () => {
+      for (const pkg of WORLD_PACKAGES) {
+        expect(getWorldPackageId('dev', pkg)).toMatch(/^0x[0-9a-f]+$/)
       }
     })
   })
 
-  describe('getTenantWorldType', () => {
-    it('returns type-origin-correct tags for the TenantItemId key', () => {
-      expect(
-        getTenantWorldType(TenantId.TAUCETI, 'in_game_id::TenantItemId'),
-      ).toBe(`${WORLD_TEST}::in_game_id::TenantItemId`)
-      expect(
-        getTenantWorldType(TenantId.UTOPIA, 'in_game_id::TenantItemId'),
-      ).toBe(`${WORLD_UAT}::in_game_id::TenantItemId`)
-    })
-
-    it('returns the ObjectRegistry tag that anchors packageId', () => {
-      expect(
-        getTenantWorldType(
-          TenantId.STILLNESS,
-          'object_registry::ObjectRegistry',
-        ),
-      ).toBe(`${WORLD}::object_registry::ObjectRegistry`)
+  describe('tenant world resolution', () => {
+    it('throws for a tier missing from the MVR cache', () => {
+      expect(() =>
+        getTenantWorldType(TenantId.TAUCETI, 'character::identity::Identity'),
+      ).toThrow(/MVR cache has no type-origin entry/)
+      expect(() =>
+        getTenantWorldPackageId(TenantId.LIMINALITY, 'core'),
+      ).toThrow(/@evefrontier\/world-core-ptu::object_registry::ObjectRegistry/)
     })
   })
 
@@ -108,11 +144,18 @@ describe('tenant', () => {
       }
     })
 
-    it('resolves stillness/liminality to the one shared @evefrontier/currency package', () => {
-      for (const id of [TenantId.STILLNESS, TenantId.LIMINALITY]) {
-        expect(TENANT_CONFIG[id].currencyMvrName).toBe('@evefrontier/currency')
-        expect(TENANT_CONFIG[id].evePackageId).toBe(EVE)
-      }
+    it('resolves stillness to the @evefrontier/currency package', () => {
+      expect(TENANT_CONFIG[TenantId.STILLNESS].currencyMvrName).toBe(
+        '@evefrontier/currency',
+      )
+      expect(TENANT_CONFIG[TenantId.STILLNESS].evePackageId).toBe(EVE)
+    })
+
+    it('resolves liminality to the currency-ptu package', () => {
+      expect(TENANT_CONFIG[TenantId.LIMINALITY].currencyMvrName).toBe(
+        '@evefrontier/currency-ptu',
+      )
+      expect(TENANT_CONFIG[TenantId.LIMINALITY].evePackageId).toBe(EVE_PTU)
     })
   })
 

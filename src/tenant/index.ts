@@ -10,7 +10,10 @@
  *
  * - `TenantId` lists the supported tenants
  * - `DEFAULT_TENANT` identifies the fallback tenant
- * - `TENANT_CONFIG` maps each tenant to package IDs and DataHub hostnames
+ * - `TENANT_CONFIG` maps each tenant to its world tier, EVE package ID and
+ *   DataHub hostname
+ * - `getTenantWorldType` / `getTenantWorldPackageId` resolve per-package world
+ *   types and package IDs for a tenant
  * - `EVE_PACKAGE_ID_BY_TENANT` exposes the EVE package ID lookup directly
  *
  * ### Quick example
@@ -25,5 +28,10 @@
  */
 
 export { getMvrCache } from './mvr/mvrCache.generated'
-export { WORLD_TYPE_KEYS, type WorldTypeKey } from './mvr/worldTypeKeys'
+export {
+  WORLD_PACKAGES,
+  WORLD_TYPE_KEYS,
+  type WorldPackage,
+  type WorldTypeKey,
+} from './mvr/worldTypeKeys'
 export * from './tenants'
