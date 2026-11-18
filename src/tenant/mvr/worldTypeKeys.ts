@@ -3,99 +3,82 @@
  * `type:` filters and event subscriptions, plus the literal MVR type names that
  * seed `@mysten/mvr-static` generation.
  *
+ * World is split into one Move package per `contracts/<package>` directory of
+ * world-contracts, each registered on MVR as
+ * `@evefrontier/world-<package>-<tier>` (underscores become dashes; the live
+ * tier has no suffix), e.g. `@evefrontier/world-generic-module-dev`.
+ *
  * Each Move type is pinned to the package version in which it was FIRST defined
  * (its type-origin), which differs per type and is NOT the latest upgrade nor
- * necessarily version 1. A single world package id therefore cannot be
- * interpolated into every type string; each type must be resolved individually.
+ * necessarily version 1. A single package id therefore cannot be interpolated
+ * into every type string; each type must be resolved individually.
  * `mvrCache.generated.ts` embeds those resolutions; regenerate it with
  * `bun run gen:mvr` after any world-contract upgrade.
  */
 
-/** Short `module::Type` keys, the single source of truth for what we resolve. */
+/** World Move packages, named as in world-contracts `contracts/<package>`. */
+export const WORLD_PACKAGES = [
+  'core',
+  'character',
+  'creation',
+  'generic_module',
+  'inventory',
+  'power',
+  'metadata',
+  'killmail',
+] as const
+
+export type WorldPackage = (typeof WORLD_PACKAGES)[number]
+
+/**
+ * Package-qualified `package::module::Type` keys, the single source of truth
+ * for what we resolve. The first key of each package anchors its package id.
+ */
 export const WORLD_TYPE_KEYS = [
-  'character::Character',
-  'character::PlayerProfile',
-  'access::OwnerCap',
-  'object_registry::ObjectRegistry',
-  'energy::EnergyConfig',
-  'fuel::FuelConfig',
-  'in_game_id::TenantItemId',
-  'inventory::ItemBurnedEvent',
-  'inventory::ItemMintedEvent',
-  'status::StatusChangedEvent',
-  'fuel::FuelEvent',
-  // world-contracts core (entity model); resolved under `@evefrontier/world-core-<tier>`
-  'entity_key::EntityKey',
-  'access_cap::AccessCap',
-  'entity::Entity',
+  'core::object_registry::ObjectRegistry',
+  'core::entity_key::EntityKey',
+  'core::access_cap::AccessCap',
+  'core::entity::Entity',
+  'character::identity::Identity',
+  'character::identity::CharacterCreated',
+  'creation::layout::Layout',
+  'generic_module::generic_module::GenericModule',
+  'inventory::inventory::Inventory',
+  'inventory::item::Item',
+  'inventory::item::ItemMinted',
+  'inventory::item::ItemBurned',
+  'power::fuel::Fuel',
+  'metadata::metadata::Metadata',
+  'killmail::record::Killmail',
+  'killmail::record::KillmailCreated',
 ] as const
 
 export type WorldTypeKey = (typeof WORLD_TYPE_KEYS)[number]
 
 /**
- * Fully-qualified MVR type-name literals across every world tier. Only exists so
- * the `@mysten/mvr-static` scanner (which matches literal `name::module::Type`
- * strings, not our dynamically-built ones) discovers what to resolve. Not read
- * at runtime — the generated cache is. Keep in sync with {@link WORLD_TYPE_KEYS}.
+ * Fully-qualified MVR type-name literals for every world package, read by the
+ * `@mysten/mvr-static` scanner (which matches literal `name::module::Type`
+ * strings, not our dynamically-built ones). Not read at runtime — the generated
+ * cache is. Keep in sync with {@link WORLD_TYPE_KEYS}. Only tiers registered on
+ * MVR are listed; add `-test`/`-uat`/`-ptu`/live as they are published.
  */
-export const MVR_SCAN_SEED = [
-  '@evefrontier/world::character::Character',
-  '@evefrontier/world::character::PlayerProfile',
-  '@evefrontier/world::access::OwnerCap',
-  '@evefrontier/world::object_registry::ObjectRegistry',
-  '@evefrontier/world::energy::EnergyConfig',
-  '@evefrontier/world::fuel::FuelConfig',
-  '@evefrontier/world::in_game_id::TenantItemId',
-  '@evefrontier/world::inventory::ItemBurnedEvent',
-  '@evefrontier/world::inventory::ItemMintedEvent',
-  '@evefrontier/world::status::StatusChangedEvent',
-  '@evefrontier/world::fuel::FuelEvent',
-  '@evefrontier/world-dev::character::Character',
-  '@evefrontier/world-dev::character::PlayerProfile',
-  '@evefrontier/world-dev::access::OwnerCap',
-  '@evefrontier/world-dev::object_registry::ObjectRegistry',
-  '@evefrontier/world-dev::energy::EnergyConfig',
-  '@evefrontier/world-dev::fuel::FuelConfig',
-  '@evefrontier/world-dev::in_game_id::TenantItemId',
-  '@evefrontier/world-dev::inventory::ItemBurnedEvent',
-  '@evefrontier/world-dev::inventory::ItemMintedEvent',
-  '@evefrontier/world-dev::status::StatusChangedEvent',
-  '@evefrontier/world-dev::fuel::FuelEvent',
-  '@evefrontier/world-test::character::Character',
-  '@evefrontier/world-test::character::PlayerProfile',
-  '@evefrontier/world-test::access::OwnerCap',
-  '@evefrontier/world-test::object_registry::ObjectRegistry',
-  '@evefrontier/world-test::energy::EnergyConfig',
-  '@evefrontier/world-test::fuel::FuelConfig',
-  '@evefrontier/world-test::in_game_id::TenantItemId',
-  '@evefrontier/world-test::inventory::ItemBurnedEvent',
-  '@evefrontier/world-test::inventory::ItemMintedEvent',
-  '@evefrontier/world-test::status::StatusChangedEvent',
-  '@evefrontier/world-test::fuel::FuelEvent',
-  '@evefrontier/world-uat::character::Character',
-  '@evefrontier/world-uat::character::PlayerProfile',
-  '@evefrontier/world-uat::access::OwnerCap',
-  '@evefrontier/world-uat::object_registry::ObjectRegistry',
-  '@evefrontier/world-uat::energy::EnergyConfig',
-  '@evefrontier/world-uat::fuel::FuelConfig',
-  '@evefrontier/world-uat::in_game_id::TenantItemId',
-  '@evefrontier/world-uat::inventory::ItemBurnedEvent',
-  '@evefrontier/world-uat::inventory::ItemMintedEvent',
-  '@evefrontier/world-uat::status::StatusChangedEvent',
-  '@evefrontier/world-uat::fuel::FuelEvent',
-] as const
-
-/**
- * world-contracts core package MVR literals, read by the `@mysten/mvr-static`
- * scanner. Core keeps `object_registry::ObjectRegistry` at the same path as the
- * archived world package. Only tiers whose core name is registered on MVR are
- * listed; add `world-core-test`/`-uat`/live as they are published.
- */
-export const CORE_MVR_SCAN_SEED = [
-  '@evefrontier/world-core-dev::entity_key::EntityKey',
+export const WORLD_MVR_SCAN_SEED = [
   '@evefrontier/world-core-dev::object_registry::ObjectRegistry',
+  '@evefrontier/world-core-dev::entity_key::EntityKey',
   '@evefrontier/world-core-dev::access_cap::AccessCap',
   '@evefrontier/world-core-dev::entity::Entity',
+  '@evefrontier/world-character-dev::identity::Identity',
+  '@evefrontier/world-character-dev::identity::CharacterCreated',
+  '@evefrontier/world-creation-dev::layout::Layout',
+  '@evefrontier/world-generic-module-dev::generic_module::GenericModule',
+  '@evefrontier/world-inventory-dev::inventory::Inventory',
+  '@evefrontier/world-inventory-dev::item::Item',
+  '@evefrontier/world-inventory-dev::item::ItemMinted',
+  '@evefrontier/world-inventory-dev::item::ItemBurned',
+  '@evefrontier/world-power-dev::fuel::Fuel',
+  '@evefrontier/world-metadata-dev::metadata::Metadata',
+  '@evefrontier/world-killmail-dev::record::Killmail',
+  '@evefrontier/world-killmail-dev::record::KillmailCreated',
 ] as const
 
 /**
@@ -108,4 +91,5 @@ export const CURRENCY_MVR_SCAN_SEED = [
   '@evefrontier/currency-dev::EVE::EVE',
   '@evefrontier/currency-test::EVE::EVE',
   '@evefrontier/currency-uat::EVE::EVE',
+  '@evefrontier/currency-ptu::EVE::EVE',
 ] as const
