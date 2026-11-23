@@ -28,17 +28,14 @@ describe('addressAliasesObjectId', () => {
     expect(addressAliasesObjectId(GOLDEN_OWNER)).toBe(GOLDEN_OBJECT_ID)
   })
 
-  it.each([
-    '0x1',
-    '0x01',
-    '1',
-    '0X1',
-    `0x${'0'.repeat(63)}1`,
-  ])('should resolve %s to the same id as the full address', (owner) => {
-    expect(addressAliasesObjectId(owner)).toBe(
-      addressAliasesObjectId(`0x${'0'.repeat(63)}1`),
-    )
-  })
+  it.each(['0x1', '0x01', '1', '0X1', `0x${'0'.repeat(63)}1`])(
+    'should resolve %s to the same id as the full address',
+    (owner) => {
+      expect(addressAliasesObjectId(owner)).toBe(
+        addressAliasesObjectId(`0x${'0'.repeat(63)}1`),
+      )
+    },
+  )
 
   it('should ignore the case of the owner', () => {
     expect(
@@ -191,17 +188,17 @@ describe('getAddressAliases', () => {
     )
   })
 
-  it.each([
-    'deleted',
-    'unknown',
-  ] as const)('should rethrow an object error with reason %s', async (reason) => {
-    const failure = new ObjectError('x', 'boom', { reason })
-    const getObject = vi.fn().mockRejectedValue(failure)
+  it.each(['deleted', 'unknown'] as const)(
+    'should rethrow an object error with reason %s',
+    async (reason) => {
+      const failure = new ObjectError('x', 'boom', { reason })
+      const getObject = vi.fn().mockRejectedValue(failure)
 
-    await expect(getAddressAliases(clientWith(getObject), OWNER)).rejects.toBe(
-      failure,
-    )
-  })
+      await expect(
+        getAddressAliases(clientWith(getObject), OWNER),
+      ).rejects.toBe(failure)
+    },
+  )
 
   it('should reject an invalid owner without reading the chain', async () => {
     const getObject = vi.fn()

@@ -44,13 +44,13 @@ Check the [Architecture ADR](https://github.com/evefrontier/architecture-decisio
 
 This is a [Bun](https://bun.sh) repo. Use `bun`, not `npm` or `pnpm`.
 
-| Task | Command |
-| --- | --- |
-| Setup Node | `nvm use` |
-| Install deps | `bun install` |
-| Install testing deps | `bunx playwright install --with-deps chromium` |
-| Lint & format (Biome) | `bun run lint` / `bun run lint:fix` |
-| Unit tests | `bun run test` (all tests, headless) / `bun run test:coverage` (CI) |
+| Task                  | Command                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| Setup Node            | `nvm use`                                                           |
+| Install deps          | `bun install`                                                       |
+| Install testing deps  | `bunx playwright install --with-deps chromium`                      |
+| Lint & format (Biome) | `bun run lint` / `bun run lint:fix`                                 |
+| Unit tests            | `bun run test` (all tests, headless) / `bun run test:coverage` (CI) |
 
 Formatting and linting are enforced by [Biome](https://biomejs.dev): single quotes, no semicolons, 2-space indent, auto-organized imports. Use `bun run lint:fix`.
 

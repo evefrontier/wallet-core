@@ -63,7 +63,7 @@ default = true
 
 [[plugin]]
 name = "biome"
-version = "2.4.15"
+version = "2.6.8"
 
 [[plugin]]
 name = "ripgrep"
