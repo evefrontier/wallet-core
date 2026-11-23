@@ -82,15 +82,15 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
     "@mysten/mvr-static": "0.4.38",
-    "@vitest/browser-playwright": "^4.1.12",
-    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/browser-playwright": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "husky": "^9.1.7",
     "playwright": "^1.63.0",
     "tsdown": "^0.23.7",
     "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "^4.13.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.12"
+    "vitest": "^5.1.0"
   },
   "scripts": {
     "clean": "rm -rf ./dist ./docs",
