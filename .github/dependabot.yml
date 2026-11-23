@@ -29,6 +29,13 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # vitest and its @vitest/* plugins must share a version, so update them
+      # together, majors included. Listed first because Dependabot assigns
+      # each update to the first group that matches.
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
       # Minor and patch updates in one PR; each major update gets its own PR.
       bun-minor-and-patch:
         update-types:
