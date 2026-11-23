@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -16,13 +16,18 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
       "semicolons": "asNeeded"
+    }
+  },
+  "yaml": {
+    "formatter": {
+      "quoteStyle": "single"
     }
   },
   "assist": {

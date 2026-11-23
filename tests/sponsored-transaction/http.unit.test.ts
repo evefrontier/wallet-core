@@ -251,22 +251,25 @@ describe('fetchUnsignedAddressAliasTransaction', () => {
     `0x${'ab'.repeat(31)}`,
     ` ${ALIAS_ADDRESS}`,
     `${ALIAS_ADDRESS} `,
-  ])('should throw invalid_input without calling fetch for add with address %j', async (address) => {
-    const { context, fetchMock } = contextWithResponse(
-      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
-    )
+  ])(
+    'should throw invalid_input without calling fetch for add with address %j',
+    async (address) => {
+      const { context, fetchMock } = contextWithResponse(
+        jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+      )
 
-    await expect(
-      fetchUnsignedAddressAliasTransaction(
-        { action: 'add', personalAccessKeyAddress: address as string },
-        context,
-      ),
-    ).rejects.toMatchObject({
-      code: 'invalid_input',
-      message: 'personal access key address must be a valid Sui address',
-    })
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
+      await expect(
+        fetchUnsignedAddressAliasTransaction(
+          { action: 'add', personalAccessKeyAddress: address as string },
+          context,
+        ),
+      ).rejects.toMatchObject({
+        code: 'invalid_input',
+        message: 'personal access key address must be a valid Sui address',
+      })
+      expect(fetchMock).not.toHaveBeenCalled()
+    },
+  )
 
   it('should throw invalid_input without calling fetch on an unknown action', async () => {
     const { context, fetchMock } = contextWithResponse(

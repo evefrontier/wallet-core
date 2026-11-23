@@ -48,11 +48,15 @@ Supported package subpath exports:
 Example imports:
 
 ```ts
-import { ZKEd25519Keypair, type ZKProofData } from '@evefrontier/wallet-core/crypto'
+import {
+  ZKEd25519Keypair,
+  type ZKProofData,
+} from '@evefrontier/wallet-core/crypto'
 import { SponsoredTransactionActions } from '@evefrontier/wallet-core/sponsored-transaction'
 ```
 
 Keypair signers available are:
+
 - ZKEd25519Keypair
 - ZKSecp256r1Keypair
 - ZKWebCryptoSigner
@@ -60,10 +64,11 @@ Keypair signers available are:
 ### Creating a signer
 
 These can be instantiated as follows:
+
 ```ts
 // ZKEd25519Keypair
 const keypair = new ZKEd25519Keypair()
-// or 
+// or
 const keypair = ZKEd25519Keypair.generate()
 
 // ZKSecp256r1Keypair
@@ -170,8 +175,7 @@ Signing a personal message can be done as follows:
 
 ```ts
 const message = fromBase64('SGVsbG8gV29ybGQ=')
-const { signature, bytes } =
-  await keypair.signPersonalMessage(message)
+const { signature, bytes } = await keypair.signPersonalMessage(message)
 ```
 
 ## Local Development
