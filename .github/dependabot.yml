@@ -1,0 +1,39 @@
+# Dependabot version updates. Security updates are configured separately in
+# the repository settings.
+#
+# Every ecosystem waits 7 days after a release before proposing it
+# (cooldown). New releases are the most likely to be broken or compromised,
+# and zizmor (a required check) flags a shorter cooldown.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      # One PR for all action updates. Actions stay pinned to commit SHAs;
+      # Dependabot updates the SHA and the version comment together.
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: ci
+      include: scope
+
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      # Minor and patch updates in one PR; each major update gets its own PR.
+      bun-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: build
+      include: scope
