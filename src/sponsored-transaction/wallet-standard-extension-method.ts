@@ -1,20 +1,29 @@
-import type {
-  SponsoredTransactionActions,
-  SponsoredTransactionAssemblyType,
-} from './assemblies'
+import type { SponsoredTransactionActions } from './actions'
 
+/** Display fields for an entity. An edit replaces all three; send `''` to clear one. */
 export interface SponsoredTransactionMetadata {
-  name?: string
-  description?: string
-  url?: string
+  name: string
+  description: string
+  url: string
 }
 
-export type SponsoredTransactionInput = {
-  txAction: SponsoredTransactionActions
-  assembly: string // uint64 decimal string, preserves ids > 2^53
-  assemblyType: SponsoredTransactionAssemblyType
-  metadata?: SponsoredTransactionMetadata
+interface SponsoredTransactionBase {
+  /** In-game entity id (`EntityKey.id`), uint64 decimal string; the tenant comes from the token. */
+  entityId: string
 }
+
+export interface UpdateMetadataInput extends SponsoredTransactionBase {
+  txAction: SponsoredTransactionActions.UPDATE_METADATA
+  metadata: SponsoredTransactionMetadata
+}
+
+export interface SetPowerGridInput extends SponsoredTransactionBase {
+  txAction: SponsoredTransactionActions.SET_POWER_GRID
+  /** Switch the entity's power grid on (`true`) or off (`false`). */
+  on: boolean
+}
+
+export type SponsoredTransactionInput = UpdateMetadataInput | SetPowerGridInput
 
 export type SponsoredTransactionOutput = {
   /** The transaction digest */

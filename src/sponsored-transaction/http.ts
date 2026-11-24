@@ -1,10 +1,11 @@
 import { isValidSuiAddress } from '@mysten/sui/utils'
 import { decodeEveClaims } from '#src/jwt'
-import { isNonEmptyString, isObjectRecord } from '#src/utils'
 import {
-  ASSEMBLY_TYPE_API_STRING,
-  SponsoredTransactionActions,
-} from './assemblies'
+  isNonEmptyString,
+  isObjectRecord,
+  isUnsignedDecimalIntegerStringBelow,
+} from '#src/utils'
+import { SponsoredTransactionActions } from './actions'
 import type {
   SponsoredTransactionInput,
   SponsoredTransactionOutput,
@@ -13,9 +14,9 @@ import type {
 /** Gateway `executionStatus` value for an on-chain success (vs `'failure'`). */
 const EXECUTION_STATUS_SUCCESS = 'success'
 
-const VALID_ASSEMBLY_TYPES = new Set<string>(
-  Object.values(ASSEMBLY_TYPE_API_STRING),
-)
+/** Entity ids are Move `u64`s. */
+const ENTITY_ID_UPPER_BOUND = 2n ** 64n
+
 const VALID_TX_ACTIONS = new Set<string>(
   Object.values(SponsoredTransactionActions),
 )
@@ -172,12 +173,54 @@ function parseUnsignedTransaction(
 }
 
 /**
+ * Builds the gateway request body for `input`, rejecting fields the types
+ * cannot enforce for JS callers or dynamically-built inputs.
+ */
+function sponsoredTransactionBody(
+  input: SponsoredTransactionInput,
+): Record<string, unknown> {
+  switch (input.txAction) {
+    case SponsoredTransactionActions.UPDATE_METADATA: {
+      const metadata: unknown = input.metadata
+      if (
+        !isObjectRecord(metadata) ||
+        typeof metadata.name !== 'string' ||
+        typeof metadata.description !== 'string' ||
+        typeof metadata.url !== 'string'
+      ) {
+        throw new SponsoredTransactionError(
+          'invalid_input',
+          'update-metadata requires string metadata name, description and url',
+        )
+      }
+      return {
+        entityId: input.entityId,
+        name: metadata.name,
+        description: metadata.description,
+        url: metadata.url,
+      }
+    }
+    case SponsoredTransactionActions.SET_POWER_GRID: {
+      const on: unknown = input.on
+      if (typeof on !== 'boolean') {
+        throw new SponsoredTransactionError(
+          'invalid_input',
+          'set-power-grid requires a boolean on',
+        )
+      }
+      return { entityId: input.entityId, on }
+    }
+  }
+}
+
+/**
  * Requests an unsigned sponsored transaction from the API gateway for the
- * given assembly action. Sign the returned `bcsDataB64Bytes`, then submit
+ * given entity action. Sign the returned `bcsDataB64Bytes`, then submit
  * via {@link executeSponsoredTransaction}.
  *
- * @throws SponsoredTransactionError on non-OK responses (`fetch_failed`) or
- * unexpected response shape (`invalid_shape`).
+ * @throws SponsoredTransactionError on invalid input (`invalid_input`),
+ * non-OK responses (`fetch_failed`) or unexpected response shape
+ * (`invalid_shape`).
  */
 export async function fetchUnsignedSponsoredTransaction(
   input: SponsoredTransactionInput,
@@ -186,32 +229,25 @@ export async function fetchUnsignedSponsoredTransaction(
   // Guard against unknown values before hitting the gateway (types don't
   // constrain JS callers or dynamically-built inputs), so a typo fails here
   // rather than as a 404 from an unroutable path.
-  if (!VALID_ASSEMBLY_TYPES.has(input.assemblyType)) {
-    throw new SponsoredTransactionError(
-      'invalid_input',
-      `Unknown assembly type: ${input.assemblyType}`,
-    )
-  }
   if (!VALID_TX_ACTIONS.has(input.txAction)) {
     throw new SponsoredTransactionError(
       'invalid_input',
       `Unknown transaction action: ${input.txAction}`,
     )
   }
-
-  const path = `v2/transactions/sponsored/${encodeURIComponent(
-    input.assemblyType,
-  )}/${encodeURIComponent(input.txAction)}`
+  // Gateway wants a decimal string; a number would lose precision past 2^53.
+  if (
+    !isUnsignedDecimalIntegerStringBelow(input.entityId, ENTITY_ID_UPPER_BOUND)
+  ) {
+    throw new SponsoredTransactionError(
+      'invalid_input',
+      `Entity id must be a uint64 decimal string: ${String(input.entityId)}`,
+    )
+  }
 
   const { response, raw } = await postJson(
-    path,
-    {
-      // Gateway wants a decimal string (^[1-9][0-9]*$); a number 400s.
-      assemblyId: String(input.assembly),
-      name: input.metadata?.name,
-      description: input.metadata?.description,
-      url: input.metadata?.url,
-    },
+    `v2/transactions/sponsored/${encodeURIComponent(input.txAction)}`,
+    sponsoredTransactionBody(input),
     context,
   )
 
