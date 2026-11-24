@@ -11,10 +11,15 @@ import {
 import { tokenWithPayload } from '../jwt/test-tokens'
 
 const INPUT: SponsoredTransactionInput = {
-  txAction: SponsoredTransactionActions.BRING_ONLINE,
-  assembly: '42',
-  assemblyType: 'storage-units',
+  txAction: SponsoredTransactionActions.UPDATE_METADATA,
+  entityId: '42',
   metadata: { name: 'My SSU', description: 'desc', url: 'https://x.example' },
+}
+
+const POWER_INPUT: SponsoredTransactionInput = {
+  txAction: SponsoredTransactionActions.SET_POWER_GRID,
+  entityId: '18446744073709551615',
+  on: true,
 }
 
 /** Gateway token whose `tenant` claim drives the `X-Tenant` header. */
@@ -55,7 +60,7 @@ function contextWithResponse(
 }
 
 describe('fetchUnsignedSponsoredTransaction', () => {
-  it('should POST the assembly action with tenant and bearer headers', async () => {
+  it('should POST the update-metadata action with tenant and bearer headers', async () => {
     const { context, fetchMock } = contextWithResponse(
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
@@ -65,11 +70,11 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     expect(result).toEqual({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://gateway.example/v2/transactions/sponsored/storage-units/online',
+      'https://gateway.example/v2/transactions/sponsored/update-metadata',
       {
         method: 'POST',
         body: JSON.stringify({
-          assemblyId: '42',
+          entityId: '42',
           name: 'My SSU',
           description: 'desc',
           url: 'https://x.example',
@@ -84,20 +89,89 @@ describe('fetchUnsignedSponsoredTransaction', () => {
     )
   })
 
-  it('should throw invalid_input without calling fetch on an unknown assembly type', async () => {
+  it('should POST the set-power-grid action with the on flag', async () => {
     const { context, fetchMock } = contextWithResponse(
       jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
     )
 
-    await expect(
-      fetchUnsignedSponsoredTransaction(
-        // Bypass the type to exercise the runtime guard for JS callers.
-        { ...INPUT, assemblyType: 'bogus' as never },
-        context,
-      ),
-    ).rejects.toMatchObject({ code: 'invalid_input' })
-    expect(fetchMock).not.toHaveBeenCalled()
+    await fetchUnsignedSponsoredTransaction(POWER_INPUT, context)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://gateway.example/v2/transactions/sponsored/set-power-grid',
+      expect.objectContaining({
+        body: JSON.stringify({ entityId: '18446744073709551615', on: true }),
+      }),
+    )
   })
+
+  it('should send empty metadata strings so a field can be cleared', async () => {
+    const { context, fetchMock } = contextWithResponse(
+      jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+    )
+
+    await fetchUnsignedSponsoredTransaction(
+      { ...INPUT, metadata: { name: 'My SSU', description: '', url: '' } },
+      context,
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({
+          entityId: '42',
+          name: 'My SSU',
+          description: '',
+          url: '',
+        }),
+      }),
+    )
+  })
+
+  it.each([
+    ['a negative id', '-1'],
+    ['a hex id', '0x2a'],
+    ['an id past u64', '18446744073709551616'],
+    ['an empty id', ''],
+    ['a number', 42],
+  ])(
+    'should throw invalid_input without calling fetch on %s',
+    async (_, entityId) => {
+      const { context, fetchMock } = contextWithResponse(
+        jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+      )
+
+      await expect(
+        fetchUnsignedSponsoredTransaction(
+          // Bypass the type to exercise the runtime guard for JS callers.
+          { ...INPUT, entityId: entityId as never },
+          context,
+        ),
+      ).rejects.toMatchObject({ code: 'invalid_input' })
+      expect(fetchMock).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([
+    ['missing metadata', { ...INPUT, metadata: undefined }],
+    [
+      'a missing metadata field',
+      { ...INPUT, metadata: { name: 'My SSU', description: 'desc' } },
+    ],
+    ['a missing on flag', { ...POWER_INPUT, on: undefined }],
+    ['a non-boolean on flag', { ...POWER_INPUT, on: 'true' }],
+  ])(
+    'should throw invalid_input without calling fetch on %s',
+    async (_, input) => {
+      const { context, fetchMock } = contextWithResponse(
+        jsonResponse({ bcsDataB64Bytes: 'AAEC', preparationId: 'prep-1' }),
+      )
+
+      await expect(
+        fetchUnsignedSponsoredTransaction(input as never, context),
+      ).rejects.toMatchObject({ code: 'invalid_input' })
+      expect(fetchMock).not.toHaveBeenCalled()
+    },
+  )
 
   it('should throw invalid_input without calling fetch on an unknown action', async () => {
     const { context, fetchMock } = contextWithResponse(

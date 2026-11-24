@@ -7,7 +7,7 @@
  *
  * The sponsored-transaction entrypoint groups together:
  *
- * - assembly enums and API string mappings used by sponsored transaction APIs
+ * - `SponsoredTransactionActions`, the entity actions the gateway sponsors
  * - transaction input and output types for the sponsored signing method
  * - `SponsoredTransactionMethod`, the wallet-facing method signature
  * - `fetchUnsignedSponsoredTransaction` / `executeSponsoredTransaction`, the
@@ -41,18 +41,23 @@
  *
  * ```ts
  * import {
- *   Assemblies,
- *   getAssemblyTypeApiString,
+ *   SponsoredTransactionActions,
  *   type SponsoredTransactionInput,
  * } from '@evefrontier/wallet-core/sponsored-transaction'
  *
- * const input: SponsoredTransactionInput = {
- *   txAction: 'online',
- *   assembly: 42,
- *   assemblyType: getAssemblyTypeApiString(Assemblies.SmartStorageUnit),
+ * const rename: SponsoredTransactionInput = {
+ *   txAction: SponsoredTransactionActions.UPDATE_METADATA,
+ *   entityId: '42',
+ *   metadata: { name: 'My SSU', description: '', url: '' },
+ * }
+ *
+ * const powerOn: SponsoredTransactionInput = {
+ *   txAction: SponsoredTransactionActions.SET_POWER_GRID,
+ *   entityId: '42',
+ *   on: true,
  * }
  * ```
  */
-export * from './assemblies'
+export * from './actions'
 export * from './http'
 export * from './wallet-standard-extension-method'
